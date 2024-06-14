@@ -8,6 +8,7 @@ interface ErrorModalProps {
 }
 
 const ErrorModal: React.FC<ErrorModalProps> = ({ title, message, onRetry, onClose }) => {
+    console.log(message)
     return (
         <div className="fixed inset-0 flex items-center justify-center bg-gray-800 bg-opacity-75">
             <div className="bg-white rounded-lg p-6 shadow-lg max-w-sm w-full">
@@ -19,7 +20,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ title, message, onRetry, onClos
                 </div>
                 <h2 className="text-xl font-bold text-center pb-4 text-gray-700">{title}</h2>
                 <div className="text-center text-gray-500 mb-6">
-                    Pres OK to If you want to retry, or Cancel to exit the transaction.
+                    Press OK to If you want to retry, or Cancel to exit the transaction.
                 </div>
                 <div className="flex justify-center space-x-4">
                     <button

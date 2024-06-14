@@ -75,8 +75,27 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
     handlePayment();
   };
 
-  const handleCloseModal = () => {
-    setShowRetry(false);
+  const handleCancelTransaction = async () => {
+    try {
+      const response = await fetch('http://192.168.2.89:5000/api/canceltransaction', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const result = await response.json();
+      console.log('Cancel Response:', result);
+    } catch (error) {
+      console.error('Error cancelling transaction:', error);
+    }
+
+    onGoBack();
+  };
+
+  const handleModalClose = () => {
+    // Navigate to main screen without making the cancel request
+    window.location.href = '/';
   };
 
   return (
@@ -103,7 +122,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
         </div>
         {transactionMessage && (
           <div className="mb-6">
-            <p className={`text-lg font-bold ${theme.transactionMessageColor} text-center`}>{transactionMessage}</p>
+            <p className={`text-lg font-bold  text-center`}>{transactionMessage}</p>
           </div>
         )}
         {flow === 'MandatoryDonationFlow' && (
@@ -129,7 +148,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
           </>
         )}
         <button
-          onClick={onGoBack}
+          onClick={handleCancelTransaction}
           className={`w-full font-bold py-3 bg-transparent border-2 border-red-600 text-red-600 rounded-lg hover:bg-gray-100`}
         >
           GO BACK & EDIT DETAILS
@@ -140,7 +159,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
           title={transactionStatus ?? 'Transaction Error'}
           message={transactionMessage ?? 'An error occurred'}
           onRetry={handleRetry}
-          onClose={handleCloseModal}
+          onClose={handleModalClose}
         />
       )}
     </div>
