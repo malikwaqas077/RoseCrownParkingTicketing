@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { themes } from '../config/themes';
+import ErrorModal from './ErrorModal'; // Import the ErrorModal component
 
 interface CheckDetailsProps {
   regNumber: string;
@@ -11,24 +12,31 @@ interface CheckDetailsProps {
 
 const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flow, onGoBack, onContinue }) => {
   const theme = themes[flow].checkDetailsScreen;
+  const [transactionMessage, setTransactionMessage] = useState<string | null>(null);
+  const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
+  const [showRetry, setShowRetry] = useState<boolean>(false);
+
+  // Use a ref to track if handlePayment has been called to avoid multiple calls
+  const hasCalledPayment = useRef(false);
 
   useEffect(() => {
-    if (flow === 'MandatoryDonationFlow') {
+    if (flow === 'MandatoryDonationFlow' && !hasCalledPayment.current) {
       handlePayment();
+      hasCalledPayment.current = true;
     }
   }, [flow]);
 
   const handlePayment = async () => {
     try {
-      // Extracting the numeric value from selectedDay if it's a string (e.g., "UP TO 4 HR - £4")
-      const amount = 100;
+      const amount = typeof selectedDay === 'string' ? parseInt(selectedDay.match(/£(\d+)/)?.[1] || '0', 10) * 100 : selectedDay;
+      console.log("Amount to be charged", amount);
 
       const requestBody = {
         amount,
         client_reference: 'test_reference',
       };
 
-      console.log('Request Body:', requestBody); // Print the request body for debugging
+      console.log('Request Body:', requestBody);
 
       const response = await fetch('http://192.168.2.89:5000/api/makepayment', {
         method: 'POST',
@@ -40,17 +48,35 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
 
       const result = await response.json();
 
-      console.log('Response:', result); // Print the response for debugging
+      console.log('Response:', result);
 
-      if (result.transaction_status === 'Transaction Successful') {
+      const message = result.transaction_status;
+      setTransactionStatus(message);
+
+      if (message === 'Transaction Successful') {
         onContinue();
       } else {
-        alert('Payment has not been successful.');
+        setTransactionMessage(message);
+        setShowRetry(true);
       }
+
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Payment has not been successful.');
+      setTransactionStatus('Error');
+      setTransactionMessage('Payment has not been successful.');
+      setShowRetry(true);
     }
+  };
+
+  const handleRetry = () => {
+    setTransactionMessage(null);
+    setShowRetry(false);
+    hasCalledPayment.current = false;
+    handlePayment();
+  };
+
+  const handleCloseModal = () => {
+    setShowRetry(false);
   };
 
   return (
@@ -75,6 +101,11 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
             className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputDaysBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center`}
           />
         </div>
+        {transactionMessage && (
+          <div className="mb-6">
+            <p className={`text-lg font-bold ${theme.transactionMessageColor} text-center`}>{transactionMessage}</p>
+          </div>
+        )}
         {flow === 'MandatoryDonationFlow' && (
           <>
             <div className="flex items-center justify-center mb-6">
@@ -104,6 +135,14 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
           GO BACK & EDIT DETAILS
         </button>
       </div>
+      {showRetry && (
+        <ErrorModal
+          title={transactionStatus ?? 'Transaction Error'}
+          message={transactionMessage ?? 'An error occurred'}
+          onRetry={handleRetry}
+          onClose={handleCloseModal}
+        />
+      )}
     </div>
   );
 };

@@ -10,6 +10,8 @@ interface TapToStartProps {
 const TapToStart: React.FC<TapToStartProps> = ({ flow, onStart }) => {
   const theme = themes[flow].tapToStartScreen;
 
+  const showBottomSections = flow !== 'NoParkFeeFlow' && flow !== 'MandatoryDonationFlow';
+
   return (
     <div className="bg-white flex items-center justify-center min-h-screen font-din">
       <div className="relative w-full max-w-lg" style={{ minHeight: '70vh', minWidth: '50vh' }}>
@@ -25,7 +27,7 @@ const TapToStart: React.FC<TapToStartProps> = ({ flow, onStart }) => {
             TAP TO START
           </button>
         </div>
-        {flow !== 'NoParkFeeFlow' && (
+        {showBottomSections && (
           <>
             <div className="text-center mb-4">
               <p className="text-sm text-gray-700">Powered by - Parkonomy</p>
@@ -55,6 +57,11 @@ const TapToStart: React.FC<TapToStartProps> = ({ flow, onStart }) => {
           </>
         )}
         {flow === 'NoParkFeeFlow' && (
+          <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 ${theme.poweredByBackgroundColor} rounded-full py-2 px-4`}>
+            <p className="text-sm text-gray-700">Powered by - Parkonomy</p>
+          </div>
+        )}
+        {flow === 'MandatoryDonationFlow' && (
           <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 ${theme.poweredByBackgroundColor} rounded-full py-2 px-4`}>
             <p className="text-sm text-gray-700">Powered by - Parkonomy</p>
           </div>
