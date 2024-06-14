@@ -1,3 +1,4 @@
+// src/components/EnterStayDuration.tsx
 import React, { useState, useEffect } from 'react';
 import { themes } from '../config/themes';
 
@@ -16,15 +17,21 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
     let URL;
     if (flow === 'MandatoryDonationFlow') {
       URL = "http://localhost:5000/api/parking-fee";
-      fetch(URL)
-        .then(response => response.json())
-        .then(data => setOptions(data.map((item: { Fee: string }) => item.Fee)));
+    } else if (flow === 'OptionalDonationFlow') {
+      URL = "http://localhost:5000/api/parking-fee-without-hours";
     } else {
       URL = "http://localhost:5000/api/days";
-      fetch(URL)
-        .then(response => response.json())
-        .then(data => setOptions(data.map((item: { Days: number }) => item.Days)));
     }
+
+    fetch(URL)
+      .then(response => response.json())
+      .then(data => {
+        if (flow === 'MandatoryDonationFlow' || flow === 'OptionalDonationFlow') {
+          setOptions(data.map((item: { Fee: string }) => item.Fee));
+        } else {
+          setOptions(data.map((item: { Days: number }) => item.Days));
+        }
+      });
   }, [flow]);
 
   const handleOptionClick = (option: string | number) => {
@@ -33,6 +40,12 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
   };
 
   const handleMoreClick = () => setShowMore(!showMore);
+
+  const handleSkipClick = () => {
+    fetch("http://localhost:5000/api/days")
+      .then(response => response.json())
+      .then(data => setOptions(data.map((item: { Days: number }) => item.Days)));
+  };
 
   return (
     <div className="bg-white flex flex-col items-center justify-center min-h-screen p-4 font-din text-center">
@@ -43,10 +56,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
         {theme.subtitle}
       </p>
       <div className="flex flex-col space-y-4 w-full max-w-md px-4">
-        {(flow === 'MandatoryDonationFlow' || flow === 'NoParkFeeFlow'
-          ? options
-          : options
-        ).slice(0, showMore ? options.length : 7).map(option => (
+        {options.slice(0, showMore ? options.length : 7).map(option => (
           <button
             key={option}
             className={`px-6 py-3 text-lg font-semibold w-full rounded border ${theme.buttonBorderColor} ${theme.buttonTextColor} ${
@@ -64,6 +74,14 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
           onClick={handleMoreClick}
         >
           {showMore ? 'LESS' : 'MORE'}
+        </button>
+      )}
+      {flow === 'OptionalDonationFlow' && (
+        <button
+          className={`mt-8 px-6 py-3 w-full rounded bg-gray-300 text-gray-700`}
+          onClick={handleSkipClick}
+        >
+          No Thanks - Skip
         </button>
       )}
     </div>
