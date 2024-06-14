@@ -75,8 +75,9 @@ export const themes = {
       },
       decisionScreen: {
           textColor: 'text-gray-800',
-          inputBackgroundColor: 'bg-gray-100',
+          inputBackgroundColor: 'bg-yellow-500',
           inputTextColor: 'text-gray-900',
+          receiptTextColor: 'text-gray-600',
           inputBorderColor: 'border-gray-400',
           buttonContinueColor: 'bg-green-700',
           buttonHoverColor: 'hover:bg-green-900',
@@ -162,6 +163,7 @@ export const themes = {
         textColor: 'text-gray-800',
         inputBackgroundColor: 'bg-gray-100',
         inputTextColor: 'text-gray-900',
+        receiptTextColor: 'text-gray-300',
         inputBorderColor: 'border-gray-400',
         buttonContinueColor: 'bg-green-700',
         buttonHoverColor: 'hover:bg-green-900',

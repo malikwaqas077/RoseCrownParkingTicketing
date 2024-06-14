@@ -26,6 +26,22 @@ const NoParkFeeComponent: React.FC = () => {
     nextStep();
   };
 
+  const handleGoBack = async () => {
+    if (flow === 'MandatoryDonationFlow') {
+      try {
+        await fetch('http://192.168.2.89:5000/api/canceltransaction', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+      } catch (error) {
+        console.error('Error cancelling transaction:', error);
+      }
+    }
+    previousStep();
+  };
+
   const handleDecisionFinish = (email: string) => {
     alert(`Email: ${email} | Reg Number: ${regNumber} | Days/Fee: ${selectedDayOrFee}`);
     // Handle finish action, such as redirecting or showing a confirmation screen
@@ -38,13 +54,13 @@ const NoParkFeeComponent: React.FC = () => {
       {step === 0 && <MainScreen flow={flow} onStart={nextStep} />}
       {step === 1 && <TapToStart flow={flow} onStart={nextStep} />}
       {step === 2 && <EnterStayDuration flow={flow} onSelect={handleDayOrFeeSelect} />}
-      {step === 3 && <EnterRegNumber flow={flow} selectedDay={selectedDayOrFee} onContinue={handleRegNumberContinue} />}
+      {step === 3 && <EnterRegNumber flow={flow} selectedDay={selectedDayOrFee} onContinue={handleRegNumberContinue} onGoBack={handleGoBack} />}
       {step === 4 && (
         <CheckDetails
           flow={flow}
           regNumber={regNumber}
           selectedDay={selectedDayOrFee}
-          onGoBack={previousStep}
+          onGoBack={handleGoBack}
           onContinue={nextStep}
         />
       )}

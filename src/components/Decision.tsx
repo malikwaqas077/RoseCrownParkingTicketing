@@ -56,7 +56,7 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, flow, on
                 <p className={`text-lg mb-8 ${theme.textColor} text-center`}>is registered to park until:</p>
                 <p className={`text-2xl font-bold mb-8 ${theme.textColor} text-center`}>{parkingEndTime}</p>
                 <div className="bg-gray-200 p-4 rounded-3xl mb-6">
-                    <p className={`text-2xl font-bold mb-4 ${theme.buttonContinueColor} text-center`}>NEED A RECEIPT?</p>
+                    <p className={`text-2xl font-bold mb-4 ${theme.receiptTextColor} text-center`}>NEED A RECEIPT?</p>
                     <p className={`text-sm mb-4 ${theme.subtitleColor} text-center`}>Enter your email address or scan the QR code below</p>
                     <input
                         type="text"

@@ -14,7 +14,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
 
   useEffect(() => {
     let URL;
-    if (flow === 'MandatoryDonationFlow' || flow === 'NoParkFeeFlow') {
+    if (flow === 'MandatoryDonationFlow') {
       URL = "http://localhost:5000/api/parking-fee";
       fetch(URL)
         .then(response => response.json())

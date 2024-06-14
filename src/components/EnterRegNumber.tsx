@@ -1,14 +1,14 @@
-// src/components/EnterRegNumber.tsx
 import React, { useState, useEffect } from 'react';
 import { themes } from '../config/themes';
 
 interface EnterRegNumberProps {
-  selectedDay: number |string | null;
+  selectedDay: number | string | null;
   flow: keyof typeof themes;
   onContinue: (regNumber: string) => void;
+  onGoBack: () => void;
 }
 
-const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, flow, onContinue }) => {
+const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, flow, onContinue, onGoBack }) => {
   const [regNumber, setRegNumber] = useState('');
   const theme = themes[flow].enterRegNumberScreen;
 
@@ -82,6 +82,7 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, flow, onCo
         </button>
         <p className={`text-lg font-bold mb-4 ${theme.inputTextColor} text-center`}>OR</p>
         <button
+          onClick={onGoBack}
           className={`w-full py-3 font-semibold bg-transparent border-2 ${theme.inputBorderColor} ${theme.goBackButotntextColor} rounded-lg ${theme.backButtonHoverColor}`}
         >
           GO BACK & EDIT DETAILS
