@@ -17,7 +17,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
     let URL;
     if (flow === 'MandatoryDonationFlow') {
       URL = "http://localhost:5000/api/parking-fee";
-    } else if (flow === 'OptionalDonationFlow') {
+    } else if (flow === 'OptionalDonationFlow' || flow === 'ParkFeeFlow') {
       URL = "http://localhost:5000/api/parking-fee-without-hours";
     } else {
       URL = "http://localhost:5000/api/days";
@@ -26,7 +26,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
     fetch(URL)
       .then(response => response.json())
       .then(data => {
-        if (flow === 'MandatoryDonationFlow' || flow === 'OptionalDonationFlow') {
+        if (flow === 'MandatoryDonationFlow' || flow === 'OptionalDonationFlow' || flow === 'ParkFeeFlow') {
           setOptions(data.map((item: { Fee: string }) => item.Fee));
         } else {
           setOptions(data.map((item: { Days: number }) => item.Days));

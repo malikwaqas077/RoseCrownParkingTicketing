@@ -31,8 +31,8 @@ const NoParkFeeComponent: React.FC = () => {
 
   const handleRegNumberContinue = (regNumber: string) => {
     setRegNumber(regNumber);
-    if (flow === 'OptionalDonationFlow' && isPaying) {
-      nextStep(); // Go to GiveNickname screen if the flow is OptionalDonationFlow and user decided to pay
+    if ((flow === 'OptionalDonationFlow' || flow === 'ParkFeeFlow') && isPaying) {
+      nextStep(); // Go to GiveNickname screen if the flow is OptionalDonationFlow or ParkFeeFlow and user decided to pay
     } else {
       nextStep(); // Go to CheckDetails screen
     }
@@ -40,7 +40,7 @@ const NoParkFeeComponent: React.FC = () => {
 
   const handleNicknameContinue = (nickname: string) => {
     setNickname(nickname);
-    nextStep();
+    nextStep(); // Proceed to CheckDetails screen after nickname
   };
 
   const handleGoBack = async () => {
@@ -80,14 +80,14 @@ const NoParkFeeComponent: React.FC = () => {
           isPaying={isPaying} // Pass isPaying to EnterRegNumber
         />
       )}
-      {step === 4 && flow === 'OptionalDonationFlow' && isPaying && (
+      {step === 4 && isPaying && (
         <GiveNickname
           flow={flow}
           onContinue={handleNicknameContinue}
           onGoBack={previousStep}
         />
       )}
-      {step === 4 && (!isPaying || flow !== 'OptionalDonationFlow') && (
+      {step === 4 && !isPaying && (
         <CheckDetails
           flow={flow}
           regNumber={regNumber}

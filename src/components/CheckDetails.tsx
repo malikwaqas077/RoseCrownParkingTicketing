@@ -1,3 +1,4 @@
+// src/components/CheckDetails.tsx
 import React, { useState, useEffect, useRef } from 'react';
 import { themes } from '../config/themes';
 import ErrorModal from './ErrorModal'; // Import the ErrorModal component
@@ -6,11 +7,12 @@ interface CheckDetailsProps {
   regNumber: string;
   selectedDay: string | number | null;
   flow: keyof typeof themes;
+  nickname?: string; // Optional nickname prop
   onGoBack: () => void;
   onContinue: () => void;
 }
 
-const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flow, onGoBack, onContinue }) => {
+const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flow, nickname, onGoBack, onContinue }) => {
   const theme = themes[flow].checkDetailsScreen;
   const [transactionMessage, setTransactionMessage] = useState<string | null>(null);
   const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
@@ -20,11 +22,11 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
   const hasCalledPayment = useRef(false);
 
   useEffect(() => {
-    if (flow === 'MandatoryDonationFlow' && !hasCalledPayment.current) {
+    if ((flow === 'MandatoryDonationFlow' || flow === 'ParkFeeFlow' || (flow === 'OptionalDonationFlow' && nickname)) && !hasCalledPayment.current) {
       handlePayment();
       hasCalledPayment.current = true;
     }
-  }, [flow]);
+  }, [flow, nickname]);
 
   const handlePayment = async () => {
     try {
@@ -125,7 +127,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
             <p className={`text-lg font-bold  text-center`}>{transactionMessage}</p>
           </div>
         )}
-        {flow === 'MandatoryDonationFlow' && (
+        {(flow === 'MandatoryDonationFlow' || flow === 'ParkFeeFlow' || (flow === 'OptionalDonationFlow' && nickname)) && (
           <>
             <div className="flex items-center justify-center mb-6">
               <p className="text-xl font-bold text-blue-800">{theme.paymentText}</p>
@@ -136,7 +138,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
             </div>
           </>
         )}
-        {flow !== 'MandatoryDonationFlow' && (
+        {(flow !== 'MandatoryDonationFlow' && flow !== 'ParkFeeFlow' && (!nickname || flow !== 'OptionalDonationFlow')) && (
           <>
             <button
               onClick={onContinue}

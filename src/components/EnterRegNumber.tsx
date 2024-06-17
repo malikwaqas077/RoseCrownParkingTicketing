@@ -6,9 +6,10 @@ interface EnterRegNumberProps {
   flow: keyof typeof themes;
   onContinue: (regNumber: string) => void;
   onGoBack: () => void;
+  isPaying: boolean
 }
 
-const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, flow, onContinue, onGoBack }) => {
+const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, flow, onContinue, onGoBack, isPaying }) => {
   const [regNumber, setRegNumber] = useState('');
   const theme = themes[flow].enterRegNumberScreen;
 
