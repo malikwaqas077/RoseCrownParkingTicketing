@@ -1,16 +1,46 @@
-// src/components/TapToStart.tsx
 import React from 'react';
-import { themes } from '../config/themes';
 
-interface TapToStartProps {
-  flow: keyof typeof themes;
-  onStart: () => void;
+// Define the type for leader
+interface Leader {
+  name: string;
+  amount: string;
 }
 
-const TapToStart: React.FC<TapToStartProps> = ({ flow, onStart }) => {
-  const theme = themes[flow].tapToStartScreen;
+// Define the type for the theme configuration
+interface Theme {
+  logo: string;
+  validateParkingTextColor: string;
+  buttonColor: string;
+  buttonTextColor: string;
+  backgroundColor: string;
+  title: string;
+  Macmillanlogo: string;
+  subtitle: string;
+  recentLeaders: Leader[];
+  recentLeadersBackgroundColor: string;
+  poweredByBackgroundColor: string;
+}
 
-  const showBottomSections = flow !== 'NoParkFeeFlow' && flow !== 'MandatoryDonationFlow';
+// Define the type for config
+interface Config {
+  config: {
+    tapToStartScreen: Theme;
+  };
+}
+
+interface TapToStartProps {
+  onStart: () => void;
+  config: Config | 'NoParkFeeFlow' | 'MandatoryDonationFlow';
+  flowName: string;
+}
+
+const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) => {
+  const theme = (config as Config).config?.tapToStartScreen;
+  
+  console.log(flowName)
+  console.log(theme)
+
+  const showBottomSections = flowName !== 'NoParkFeeFlow' && flowName !== 'MandatoryDonationFlow';
 
   return (
     <div className="bg-white flex items-center justify-center min-h-screen font-din">
@@ -42,7 +72,7 @@ const TapToStart: React.FC<TapToStartProps> = ({ flow, onStart }) => {
               <h3 className="text-gray-700 font-semibold text-lg mb-0 flex-shrink-0" style={{ minWidth: '150px' }}>Recent Leaders:</h3>
               <div className="relative w-full overflow-hidden ml-4">
                 <div className="flex animate-scroll space-x-4 whitespace-nowrap">
-                  {theme.recentLeaders.map((leader, index) => (
+                  {theme.recentLeaders.map((leader: Leader, index: number) => (
                     <span key={index} className="bg-white rounded-full px-4 py-1 text-sm font-semibold text-gray-700">
                       {leader.name} - {leader.amount}
                     </span>
@@ -56,12 +86,7 @@ const TapToStart: React.FC<TapToStartProps> = ({ flow, onStart }) => {
             </div>
           </>
         )}
-        {flow === 'NoParkFeeFlow' && (
-          <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 ${theme.poweredByBackgroundColor} rounded-full py-2 px-4`}>
-            <p className="text-sm text-gray-700">Powered by - Parkonomy</p>
-          </div>
-        )}
-        {flow === 'MandatoryDonationFlow' && (
+        {(flowName === 'NoParkFeeFlow' || flowName === 'MandatoryDonationFlow') && (
           <div className={`absolute bottom-4 left-1/2 transform -translate-x-1/2 ${theme.poweredByBackgroundColor} rounded-full py-2 px-4`}>
             <p className="text-sm text-gray-700">Powered by - Parkonomy</p>
           </div>
@@ -72,3 +97,4 @@ const TapToStart: React.FC<TapToStartProps> = ({ flow, onStart }) => {
 };
 
 export default TapToStart;
+

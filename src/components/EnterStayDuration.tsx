@@ -1,23 +1,27 @@
 // src/components/EnterStayDuration.tsx
 import React, { useState, useEffect } from 'react';
-import { themes } from '../config/themes';
+//import { themes } from '../config/themes';
 
 interface EnterStayDurationProps {
-  flow: keyof typeof themes;
+  // flow: keyof typeof themes;
   onSelect: (daysOrFee: string | number) => void;
+  config:any;
+  flowName:string;
 }
 
-const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect }) => {
-  const theme = themes[flow].enterStayDurationScreen;
+const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect, flowName }) => {
+  const theme = config.config.enterStayDurationScreen;
   const [options, setOptions] = useState<string[] | number[]>([]);
   const [showMore, setShowMore] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | number | null>(null);
+  console.log(flowName)
+  console.log(theme)
 
   useEffect(() => {
     let URL;
-    if (flow === 'MandatoryDonationFlow') {
+    if (flowName === 'MandatoryDonationFlow') {
       URL = "http://localhost:5000/api/parking-fee";
-    } else if (flow === 'OptionalDonationFlow' || flow === 'ParkFeeFlow') {
+    } else if (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
       URL = "http://localhost:5000/api/parking-fee-without-hours";
     } else {
       URL = "http://localhost:5000/api/days";
@@ -26,13 +30,13 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
     fetch(URL)
       .then(response => response.json())
       .then(data => {
-        if (flow === 'MandatoryDonationFlow' || flow === 'OptionalDonationFlow' || flow === 'ParkFeeFlow') {
+        if (flowName === 'MandatoryDonationFlow' || flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
           setOptions(data.map((item: { Fee: string }) => item.Fee));
         } else {
           setOptions(data.map((item: { Days: number }) => item.Days));
         }
       });
-  }, [flow]);
+  }, [flowName]);
 
   const handleOptionClick = (option: string | number) => {
     setSelectedOption(option);
@@ -76,7 +80,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ flow, onSelect })
           {showMore ? 'LESS' : 'MORE'}
         </button>
       )}
-      {flow === 'OptionalDonationFlow' && (
+      {flowName === 'OptionalDonationFlow' && (
         <button
           className={`mt-8 px-6 py-3 w-full rounded bg-gray-300 text-gray-700`}
           onClick={handleSkipClick}

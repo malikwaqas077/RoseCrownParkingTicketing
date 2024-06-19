@@ -1,4 +1,4 @@
-// src/workflows/NoParkFeeFlow/NoParkFeeComponent.tsx
+// src/workflows/NoParkFeeFlow/MainComponent.tsx
 import React, { useState } from 'react';
 import MainScreen from '../../components/MainScreen';
 import TapToStart from '../../components/TapToStart';
@@ -8,7 +8,7 @@ import GiveNickname from '../../components/GiveNickname';
 import CheckDetails from '../../components/CheckDetails';
 import Decision from '../../components/Decision';
 
-const NoParkFeeComponent: React.FC = () => {
+const MainComponent: React.FC<{ config: any }> = ({ config }) => {
   const [step, setStep] = useState(0);
   const [selectedDayOrFee, setSelectedDayOrFee] = useState<string | number | null>(null);
   const [regNumber, setRegNumber] = useState<string>('');
@@ -16,12 +16,23 @@ const NoParkFeeComponent: React.FC = () => {
   const [parkingEndTime, setParkingEndTime] = useState<string>('12:00:00 - 00/00/0000');
   const [isPaying, setIsPaying] = useState(false); // Add state for isPaying
 
-  const nextStep = () => setStep(step + 1);
-  const previousStep = () => setStep(step - 1);
+  const flowName = config.workflowName; // Use the flow from the config
+  console.log(flowName)
+
+  const nextStep = () => {
+    console.log("Proceeding to next step", step + 1);
+    console.log("Value of EndTime", setParkingEndTime);
+    setStep(step + 1);
+  };
+
+  const previousStep = () => {
+    console.log("Going back to previous step", step - 1);
+    setStep(step - 1);
+  };
 
   const handleDayOrFeeSelect = (dayOrFee: string | number) => {
     setSelectedDayOrFee(dayOrFee);
-    if (flow === 'OptionalDonationFlow' && typeof dayOrFee === 'string') {
+    if ((flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && typeof dayOrFee === 'string') {
       setIsPaying(true); // Set isPaying to true if a fee is selected
     } else {
       setIsPaying(false);
@@ -31,7 +42,7 @@ const NoParkFeeComponent: React.FC = () => {
 
   const handleRegNumberContinue = (regNumber: string) => {
     setRegNumber(regNumber);
-    if ((flow === 'OptionalDonationFlow' || flow === 'ParkFeeFlow') && isPaying) {
+    if ((flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && isPaying) {
       nextStep(); // Go to GiveNickname screen if the flow is OptionalDonationFlow or ParkFeeFlow and user decided to pay
     } else {
       nextStep(); // Go to CheckDetails screen
@@ -40,11 +51,11 @@ const NoParkFeeComponent: React.FC = () => {
 
   const handleNicknameContinue = (nickname: string) => {
     setNickname(nickname);
-    nextStep(); // Proceed to CheckDetails screen after nickname
+    nextStep();
   };
 
   const handleGoBack = async () => {
-    if (flow === 'MandatoryDonationFlow') {
+    if (flowName === 'MandatoryDonationFlow') {
       try {
         await fetch('http://192.168.2.89:5000/api/canceltransaction', {
           method: 'POST',
@@ -64,51 +75,62 @@ const NoParkFeeComponent: React.FC = () => {
     // Handle finish action, such as redirecting or showing a confirmation screen
   };
 
-  const flow = "OptionalDonationFlow"; // Replace this with the logic to dynamically set the flow based on site or configuration
-
   return (
     <div>
-      {step === 0 && <MainScreen flow={flow} onStart={nextStep} />}
-      {step === 1 && <TapToStart flow={flow} onStart={nextStep} />}
-      {step === 2 && <EnterStayDuration flow={flow} onSelect={handleDayOrFeeSelect} />}
+      {step === 0 && <MainScreen config={config} onStart={nextStep} />}
+      {step === 1 && <TapToStart config={config} onStart={nextStep} flowName={flowName} />}
+      {step === 2 && <EnterStayDuration config={config} onSelect={handleDayOrFeeSelect} flowName={flowName} />}
       {step === 3 && (
         <EnterRegNumber
-          flow={flow}
+          config={config}
           selectedDay={selectedDayOrFee}
           onContinue={handleRegNumberContinue}
           onGoBack={handleGoBack}
           isPaying={isPaying} // Pass isPaying to EnterRegNumber
         />
       )}
-      {step === 4 && isPaying && (
+      {step === 4 && (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && isPaying && (
         <GiveNickname
-          flow={flow}
+          config={config}
           onContinue={handleNicknameContinue}
           onGoBack={previousStep}
         />
       )}
-      {step === 4 && !isPaying && (
+      {step === 4 && (!isPaying || flowName === 'MandatoryDonationFlow') && (
         <CheckDetails
-          flow={flow}
+          config={config}
           regNumber={regNumber}
           selectedDay={selectedDayOrFee}
           onGoBack={handleGoBack}
           onContinue={nextStep}
+          flowName={flowName}
         />
       )}
+      {step === 5 && (flowName === 'NoParkFeeFlow' ) && (
+        
+        <Decision
+          config={config}
+          regNumber={regNumber}
+          parkingEndTime={parkingEndTime}
+          onFinish={handleDecisionFinish}
+        />
+      )}
+      
       {step === 5 && (
         <CheckDetails
-          flow={flow}
+          config={config}
           regNumber={regNumber}
           selectedDay={selectedDayOrFee}
           nickname={nickname}
-          onGoBack={previousStep}
+          onGoBack={handleGoBack}
           onContinue={nextStep}
+          flowName={flowName}
         />
       )}
+      
       {step === 6 && (
         <Decision
-          flow={flow}
+          config={config}
           regNumber={regNumber}
           parkingEndTime={parkingEndTime}
           onFinish={handleDecisionFinish}
@@ -118,4 +140,4 @@ const NoParkFeeComponent: React.FC = () => {
   );
 };
 
-export default NoParkFeeComponent;
+export default MainComponent;

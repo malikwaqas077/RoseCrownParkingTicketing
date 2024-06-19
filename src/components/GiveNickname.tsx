@@ -1,16 +1,17 @@
 // src/components/GiveNickname.tsx
 import React, { useState } from 'react';
-import { themes } from '../config/themes';
+// import { themes } from '../config/themes';
 
 interface GiveNicknameProps {
-  flow: keyof typeof themes;
+  // flow: keyof typeof themes;
   onContinue: (nickname: string) => void;
   onGoBack: () => void;
+  config:any;
 }
 
-const GiveNickname: React.FC<GiveNicknameProps> = ({ flow, onContinue, onGoBack }) => {
+const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBack }) => {
   const [nickname, setNickname] = useState('');
-  const theme = themes[flow].enterNickNameScreen;
+  const theme = config.config.enterNickNameScreen;
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNickname(e.target.value);

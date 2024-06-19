@@ -1,20 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { themes } from '../config/themes';
+// import { themes } from '../config/themes';
 
 interface EnterRegNumberProps {
   selectedDay: number | string | null;
-  flow: keyof typeof themes;
+  // flow: keyof typeof themes;
   onContinue: (regNumber: string) => void;
   onGoBack: () => void;
-  isPaying: boolean
+  isPaying: boolean;
+  config:any;
 }
 
-const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, flow, onContinue, onGoBack, isPaying }) => {
+const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, onContinue, onGoBack, isPaying }) => {
   const [regNumber, setRegNumber] = useState('');
-  const theme = themes[flow].enterRegNumberScreen;
+  const theme = config.config.enterRegNumberScreen;
 
   useEffect(() => {
-    console.log('Selected day:', selectedDay);
+    console.log('Selected day:', selectedDay, isPaying);
   }, [selectedDay]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
