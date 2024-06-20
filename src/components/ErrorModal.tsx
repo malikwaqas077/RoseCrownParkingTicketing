@@ -16,7 +16,7 @@ const ErrorModal: React.FC<ErrorModalProps> = ({ title, message, onRetry, onClos
                     <button onClick={onClose} className="text-gray-700 text-2xl mr-auto">&times;</button>
                 </div>
                 <div className="flex justify-center mb-4">
-                    <img src="/src/assets/icons/x-button.png" alt="Question Mark" className="h-12 w-12" />
+                    <img src="/assets/icons/x-button.png" alt="Question Mark" className="h-12 w-12" />
                 </div>
                 <h2 className="text-xl font-bold text-center pb-4 text-gray-700">{title}</h2>
                 <div className="text-center text-gray-500 mb-6">

@@ -19,12 +19,14 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
 
   useEffect(() => {
     let URL;
+    const apiUrl = import.meta.env.VITE_API_URL;
+
     if (flowName === 'MandatoryDonationFlow') {
-      URL = `${process.env.REACT_APP_API_URL}/api/parking-fee`;
+      URL = `${apiUrl}/api/parking-fee`;
     } else if (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
-      URL = `${process.env.REACT_APP_API_URL}/api/parking-fee-without-hours`;
+      URL = `${apiUrl}/api/parking-fee-without-hours`;
     } else {
-      URL = `${process.env.REACT_APP_API_URL}/api/days`;
+      URL = `${apiUrl}/api/days`;
     }
 
     fetch(URL)
