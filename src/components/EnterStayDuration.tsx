@@ -20,11 +20,11 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   useEffect(() => {
     let URL;
     if (flowName === 'MandatoryDonationFlow') {
-      URL = "http://localhost:5000/api/parking-fee";
+      URL = `${process.env.REACT_APP_API_URL}/api/parking-fee`;
     } else if (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
-      URL = "http://localhost:5000/api/parking-fee-without-hours";
+      URL = `${process.env.REACT_APP_API_URL}/api/parking-fee-without-hours`;
     } else {
-      URL = "http://localhost:5000/api/days";
+      URL = `${process.env.REACT_APP_API_URL}/api/days`;
     }
 
     fetch(URL)
