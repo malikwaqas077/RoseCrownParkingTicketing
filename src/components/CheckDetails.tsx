@@ -1,32 +1,30 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { themes } from '../config/themes';
-import ErrorModal from './ErrorModal'; // Import the ErrorModal component
+import React, { useState } from 'react';
+import ErrorModal from './ErrorModal';
+import Loader from './Loader';
 
 interface CheckDetailsProps {
   regNumber: string;
   selectedDay: string | number | null;
-  flow: keyof typeof themes;
+  nickname?: string;
   onGoBack: () => void;
   onContinue: () => void;
+  config: any;
+  flowName: string;
 }
 
-const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flow, onGoBack, onContinue }) => {
-  const theme = themes[flow].checkDetailsScreen;
+const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, config, nickname, onGoBack, onContinue, flowName }) => {
+  const theme = config.config.checkDetailsScreen;
   const [transactionMessage, setTransactionMessage] = useState<string | null>(null);
   const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
   const [showRetry, setShowRetry] = useState<boolean>(false);
+  const [paymentProcessed, setPaymentProcessed] = useState<boolean>(false);
+  const [isPaymentInProgress, setIsPaymentInProgress] = useState<boolean>(false);
 
-  // Use a ref to track if handlePayment has been called to avoid multiple calls
-  const hasCalledPayment = useRef(false);
-
-  useEffect(() => {
-    if (flow === 'MandatoryDonationFlow' && !hasCalledPayment.current) {
-      handlePayment();
-      hasCalledPayment.current = true;
-    }
-  }, [flow]);
+  const defaultNickname = nickname || 'Guest';
 
   const handlePayment = async () => {
+    console.log("handlePayment called");
+    setIsPaymentInProgress(true);
     try {
       const amount = typeof selectedDay === 'string' ? parseInt(selectedDay.match(/£(\d+)/)?.[1] || '0', 10) * 100 : selectedDay;
       console.log("Amount to be charged", amount);
@@ -54,28 +52,35 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
       setTransactionStatus(message);
 
       if (message === 'Transaction Successful') {
+        console.log("Transaction Successful, calling onContinue");
+        setTransactionMessage(null);
+        setShowRetry(false);
+        setPaymentProcessed(true);
         onContinue();
       } else {
+        console.log("Transaction failed or already processed:", message);
         setTransactionMessage(message);
         setShowRetry(true);
       }
-
     } catch (error) {
       console.error('Error processing payment:', error);
       setTransactionStatus('Error');
       setTransactionMessage('Payment has not been successful.');
       setShowRetry(true);
+    } finally {
+      setIsPaymentInProgress(false);
     }
   };
 
   const handleRetry = () => {
+    console.log("Retrying payment");
     setTransactionMessage(null);
     setShowRetry(false);
-    hasCalledPayment.current = false;
     handlePayment();
   };
 
   const handleCancelTransaction = async () => {
+    console.log("Cancelling transaction");
     try {
       const response = await fetch('http://192.168.2.89:5000/api/canceltransaction', {
         method: 'POST',
@@ -94,7 +99,6 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
   };
 
   const handleModalClose = () => {
-    // Navigate to main screen without making the cancel request
     window.location.href = '/';
   };
 
@@ -115,28 +119,40 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, flo
         <div className="mb-6">
           <input
             type="text"
-            value={flow === 'NoParkFeeFlow' ? `${selectedDay ?? ''} DAYS` : selectedDay ?? ''}
+            value={flowName === 'NoParkFeeFlow' ? `${selectedDay ?? ''} DAYS` : selectedDay ?? ''}
             readOnly
             className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputDaysBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center`}
           />
         </div>
         {transactionMessage && (
           <div className="mb-6">
-            <p className={`text-lg font-bold  text-center`}>{transactionMessage}</p>
+            <p className={`text-lg font-bold text-center`}>{transactionMessage}</p>
           </div>
         )}
-        {flow === 'MandatoryDonationFlow' && (
+        {(flowName === 'MandatoryDonationFlow' || flowName === 'ParkFeeFlow' || (flowName === 'OptionalDonationFlow' && defaultNickname)) && !paymentProcessed && (
           <>
             <div className="flex items-center justify-center mb-6">
-              <p className="text-xl font-bold text-blue-800">{theme.paymentText}</p>
-              <img src={theme.arrowIcon} alt="Arrow" className="ml-2" style={{ width: '30px', height: '30px' }} />
+              <p className="text-xl font-bold text-blue-800">
+                {isPaymentInProgress ? "Please proceed with the payment device" : theme.paymentText}
+              </p>
+              {isPaymentInProgress ? (
+                <Loader />
+              ) : (
+                <img 
+                  src={theme.arrowIcon} 
+                  alt="Arrow" 
+                  className="ml-2 cursor-pointer" 
+                  style={{ width: '30px', height: '30px' }} 
+                  onClick={handlePayment}
+                />
+              )}
             </div>
             <div className="flex items-center justify-center mb-6">
               <img src={theme.nfcIcon} alt="NFC Icon" className="w-32 h-32" />
             </div>
           </>
         )}
-        {flow !== 'MandatoryDonationFlow' && (
+        {(flowName !== 'MandatoryDonationFlow' && flowName !== 'ParkFeeFlow' && (!defaultNickname || flowName !== 'OptionalDonationFlow')) && (
           <>
             <button
               onClick={onContinue}

@@ -1,14 +1,15 @@
 // src/components/MainScreen.tsx
 import React from 'react';
-import { themes } from '../config/themes';
+// import { themes } from '../config/themes';
 
 interface MainScreenProps {
-  flow: keyof typeof themes;
+  // flow: keyof typeof themes;
   onStart: () => void;
+  config:any;
 }
 
-const MainScreen: React.FC<MainScreenProps> = ({ flow, onStart }) => {
-  const theme = themes[flow].mainScreen;
+const MainScreen: React.FC<MainScreenProps> = ({ config, onStart }) => {
+  const theme = config.config.mainScreen;
 
   return (
     <div className="bg-white flex items-center justify-center min-h-screen font-din">

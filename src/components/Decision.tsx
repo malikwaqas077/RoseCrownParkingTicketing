@@ -1,17 +1,18 @@
 // src/components/Decision.tsx
 import React, { useState } from 'react';
-import { themes } from '../config/themes';
+// import { themes } from '../config/themes';
 
 interface DecisionProps {
     regNumber: string;
     parkingEndTime: string;
-    flow: keyof typeof themes;
+    // flow: keyof typeof themes;
     onFinish: (email: string) => void;
+    config:any;
 }
 
-const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, flow, onFinish }) => {
+const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, onFinish }) => {
     const [email, setEmail] = useState('');
-    const theme = themes[flow].decisionScreen;
+    const theme = config.config.decisionScreen;
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setEmail(e.target.value);
