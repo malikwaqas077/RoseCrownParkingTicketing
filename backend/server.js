@@ -8,40 +8,9 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../build')));
+app.use(express.static(path.join(__dirname, '../dist'))); // Update this line if your build directory is different
 
-// Your existing data arrays
-const data = [
-  { id: 1, Days: 1 },
-  { id: 2, Days: 2 },
-  { id: 3, Days: 3 },
-  { id: 4, Days: 4 },
-  { id: 5, Days: 5 },
-  { id: 6, Days: 6 },
-  { id: 7, Days: 7 },
-  { id: 8, Days: 8 },
-  { id: 9, Days: 9 },
-  { id: 10, Days: 10 },
-];
-
-const parking_fee = [
-  { id: 1, Fee: "UP TO 1 HR - £1" },
-  { id: 2, Fee: "UP TO 2 HR - £2" },
-  { id: 3, Fee: "UP TO 3 HR - £3" },
-  { id: 4, Fee: "UP TO 4 HR - £4" },
-  { id: 5, Fee: "UP TO 5 HR - £5" },
-  { id: 6, Fee: "UP TO 5 HR - £6" },
-  { id: 7, Fee: "UP TO 5 HR - £7" },
-  { id: 8, Fee: "UP TO 5 HR - £8" },
-  { id: 9, Fee: "UP TO 5 HR - £9" },
-  { id: 10, Fee: "UP TO 5 HR - £10" },
-];
-
-const parking_fee_without_hours = parking_fee.map(item => {
-  const feeValue = parseFloat(item.Fee.split(' - ')[1].slice(1)).toFixed(2);
-  return { id: item.id, Fee: `£${feeValue}` };
-});
-
+// Your existing routes
 app.get('/api/days', (req, res) => {
   res.json(data);
 });
@@ -90,9 +59,9 @@ app.get('/api/config/:siteId', async (req, res) => {
   }
 });
 
-// Handles any requests that don't match the ones above
+// Serve the frontend build files for any other routes
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../build', 'index.html'));
+  res.sendFile(path.join(__dirname, '../dist', 'index.html')); // Update this line if your build directory is different
 });
 
 app.listen(port, () => {
