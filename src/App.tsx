@@ -8,14 +8,14 @@ import { fetchConfigBySiteId } from './services/cosmosService';
 const App: React.FC = () => {
   const [config, setConfig] = useState(null);
 
-  const getSubdomain = () => {
-    const { hostname } = window.location;
-    const subdomain = hostname.split('.')[0];
-    return subdomain;
-  };
+  // const getSubdomain = () => {
+  //   const { hostname } = window.location;
+  //   const subdomain = hostname.split('.')[0];
+  //   return subdomain;
+  // };
 
   const getConfig = async () => {
-    const siteId = "site2"
+    const siteId = "site4"
     try {
       const configData = await fetchConfigBySiteId(siteId);
       console.log('Fetched config:', configData);

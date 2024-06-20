@@ -106,7 +106,7 @@ const MainComponent: React.FC<{ config: any }> = ({ config }) => {
           flowName={flowName}
         />
       )}
-      {step === 5 && (flowName === 'NoParkFeeFlow' ) && (
+      {step === 5 && (flowName === 'NoParkFeeFlow' || flowName === 'MandatoryDonationFlow' ) && (
         
         <Decision
           config={config}
