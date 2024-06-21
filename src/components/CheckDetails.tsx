@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ErrorModal from './ErrorModal';
 import Loader from './Loader';
 
@@ -20,6 +20,18 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
   const [paymentProcessed, setPaymentProcessed] = useState<boolean>(false);
   const [isPaymentInProgress, setIsPaymentInProgress] = useState<boolean>(false);
 
+  useEffect(() => {
+    window.handlePaymentResponse = function(response: { transaction_status: string }) {
+      console.log('Payment Response:', response);
+      setTransactionMessage(response.transaction_status);
+      if (response.transaction_status === 'Transaction Successful') {
+        onContinue();
+      } else {
+        setShowRetry(true);
+      }
+    };
+  }, [onContinue]);
+
   const defaultNickname = nickname || 'Guest';
 
   const handlePayment = async () => {
@@ -36,7 +48,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
 
       console.log('Request Body:', requestBody);
 
-      const response = await fetch('http://192.168.2.89:5000/api/makepayment', {
+      const response = await fetch('/api/makepayment', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -82,7 +94,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
   const handleCancelTransaction = async () => {
     console.log("Cancelling transaction");
     try {
-      const response = await fetch('http://192.168.2.89:5000/api/canceltransaction', {
+      const response = await fetch('/api/canceltransaction', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
