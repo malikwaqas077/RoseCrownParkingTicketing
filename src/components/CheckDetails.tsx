@@ -32,6 +32,38 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     };
   }, [onContinue]);
 
+  useEffect(() => {
+    const originalFetch = window.fetch;
+
+    window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+      if (typeof input === 'string' && input.includes('/api/makepayment')) {
+        const response = await originalFetch(input, init);
+        const responseBody = await response.json();
+        window.handlePaymentResponse(responseBody);
+        return new Response(JSON.stringify(responseBody), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
+      } else if (typeof input === 'string' && input.includes('/api/canceltransaction')) {
+        const response = await originalFetch(input, init);
+        const responseBody = await response.json();
+        window.handlePaymentResponse(responseBody);
+        return new Response(JSON.stringify(responseBody), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
+      } else {
+        return originalFetch(input, init);
+      }
+    };
+
+    return () => {
+      window.fetch = originalFetch;
+    };
+  }, []);
+
   const defaultNickname = nickname || 'Guest';
 
   const handlePayment = async () => {
@@ -195,3 +227,4 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
 };
 
 export default CheckDetails;
+
