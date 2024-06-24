@@ -1,3 +1,4 @@
+// src/components/CheckDetails.tsx
 import React, { useState, useEffect } from 'react';
 import ErrorModal from './ErrorModal';
 import Loader from './Loader';
@@ -32,116 +33,19 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     };
   }, [onContinue]);
 
-  useEffect(() => {
-    const originalFetch = window.fetch;
-
-    window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
-      if (typeof input === 'string' && input.includes('/api/makepayment')) {
-        const response = await originalFetch(input, init);
-        const responseBody = await response.json();
-        window.handlePaymentResponse(responseBody);
-        return new Response(JSON.stringify(responseBody), {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
-      } else if (typeof input === 'string' && input.includes('/api/canceltransaction')) {
-        const response = await originalFetch(input, init);
-        const responseBody = await response.json();
-        window.handlePaymentResponse(responseBody);
-        return new Response(JSON.stringify(responseBody), {
-          status: response.status,
-          statusText: response.statusText,
-          headers: response.headers,
-        });
-      } else {
-        return originalFetch(input, init);
-      }
-    };
-
-    return () => {
-      window.fetch = originalFetch;
-    };
-  }, []);
-
   const defaultNickname = nickname || 'Guest';
 
-  const handlePayment = async () => {
-    console.log("handlePayment called");
-    setIsPaymentInProgress(true);
-    try {
-      const amount = typeof selectedDay === 'string' ? parseInt(selectedDay.match(/£(\d+)/)?.[1] || '0', 10) * 100 : selectedDay;
-      console.log("Amount to be charged", amount);
-
-      const requestBody = {
-        amount,
-        client_reference: 'test_reference',
-      };
-
-      console.log('Request Body:', requestBody);
-
-      const response = await fetch('/api/makepayment', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      const result = await response.json();
-
-      console.log('Response:', result);
-
-      const message = result.transaction_status;
-      setTransactionStatus(message);
-
-      if (message === 'Transaction Successful') {
-        console.log("Transaction Successful, calling onContinue");
-        setTransactionMessage(null);
-        setShowRetry(false);
-        setPaymentProcessed(true);
-        onContinue();
-      } else {
-        console.log("Transaction failed or already processed:", message);
-        setTransactionMessage(message);
-        setShowRetry(true);
-      }
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      setTransactionStatus('Error');
-      setTransactionMessage('Payment has not been successful.');
-      setShowRetry(true);
-    } finally {
-      setIsPaymentInProgress(false);
-    }
+  const handlePayment = () => {
+    const amount = typeof selectedDay === 'string' ? parseInt(selectedDay.match(/£(\d+)/)?.[1] || '0', 10) * 100 : selectedDay;
+    const clientReference = 'test_reference';
+    const paymentUrl = `/api/makepayment?amount=${amount}&client_reference=${clientReference}`;
+    window.location.href = paymentUrl;
   };
 
-  const handleRetry = () => {
-    console.log("Retrying payment");
-    setTransactionMessage(null);
-    setShowRetry(false);
-    handlePayment();
+  const handleCancelTransaction = () => {
+    const cancelUrl = '/api/canceltransaction';
+    window.location.href = cancelUrl;
   };
-
-  const handleCancelTransaction = async () => {
-    console.log("Cancelling transaction");
-    try {
-      const response = await fetch('/api/canceltransaction', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      const result = await response.json();
-      console.log('Cancel Response:', result);
-    } catch (error) {
-      console.error('Error cancelling transaction:', error);
-    }
-
-    onGoBack();
-  };
-
   const handleModalClose = () => {
     window.location.href = '/';
   };
@@ -218,7 +122,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
         <ErrorModal
           title={transactionStatus ?? 'Transaction Error'}
           message={transactionMessage ?? 'An error occurred'}
-          onRetry={handleRetry}
+          onRetry={handlePayment}
           onClose={handleModalClose}
         />
       )}
@@ -227,4 +131,3 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
 };
 
 export default CheckDetails;
-
