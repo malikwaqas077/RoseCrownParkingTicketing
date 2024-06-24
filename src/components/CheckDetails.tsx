@@ -1,4 +1,3 @@
-// src/components/CheckDetails.tsx
 import React, { useState, useEffect } from 'react';
 import ErrorModal from './ErrorModal';
 import Loader from './Loader';
@@ -25,6 +24,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     window.handlePaymentResponse = function(response: { transaction_status: string }) {
       console.log('Payment Response:', response);
       setTransactionMessage(response.transaction_status);
+      setIsPaymentInProgress(false);
       if (response.transaction_status === 'Transaction Successful') {
         onContinue();
       } else {
@@ -39,6 +39,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     const amount = typeof selectedDay === 'string' ? parseInt(selectedDay.match(/£(\d+)/)?.[1] || '0', 10) * 100 : selectedDay;
     const clientReference = 'test_reference';
     const paymentUrl = `/api/makepayment?amount=${amount}&client_reference=${clientReference}`;
+    setIsPaymentInProgress(true);
     window.location.href = paymentUrl;
   };
 
@@ -46,8 +47,16 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     const cancelUrl = '/api/canceltransaction';
     window.location.href = cancelUrl;
   };
+
   const handleModalClose = () => {
-    window.location.href = '/';
+    setShowRetry(false);
+    setTransactionMessage(null);
+  };
+
+  const handleRetry = () => {
+    setShowRetry(false);
+    setIsPaymentInProgress(true);
+    handlePayment();
   };
 
   return (
@@ -122,7 +131,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
         <ErrorModal
           title={transactionStatus ?? 'Transaction Error'}
           message={transactionMessage ?? 'An error occurred'}
-          onRetry={handlePayment}
+          onRetry={handleRetry}
           onClose={handleModalClose}
         />
       )}
