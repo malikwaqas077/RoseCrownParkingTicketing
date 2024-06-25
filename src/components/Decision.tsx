@@ -1,18 +1,26 @@
-// src/components/Decision.tsx
-import React, { useState } from 'react';
-// import { themes } from '../config/themes';
+import React, { useState, useEffect } from 'react';
+import { system_config } from '../config/config';
+import ErrorModal from './ErrorModal'; // Assuming ErrorModal is a component you use
+import Loader from './Loader'; // Assuming Loader is a component you use
 
 interface DecisionProps {
     regNumber: string;
     parkingEndTime: string;
-    // flow: keyof typeof themes;
     onFinish: (email: string) => void;
-    config:any;
+    config: any;
 }
 
 const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, onFinish }) => {
     const [email, setEmail] = useState('');
     const theme = config.config.decisionScreen;
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            window.location.href = '/';
+        }, system_config.redirectTimeout * 1000);
+
+        return () => clearTimeout(timer);
+    }, []);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setEmail(e.target.value);
@@ -27,11 +35,8 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
     };
 
     const handleFinish = () => {
-        if (email) {
-            onFinish(email);
-        } else {
-            alert('Please enter an email address or scan the QR code');
-        }
+        onFinish(email);
+        window.location.href = '/';
     };
 
     const keys = [
@@ -97,8 +102,6 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
                         <img src="/src/assets/icons/qr-code.png" alt="QR Code" className="w-16 h-16" />
                     </div>
                 </div>
-
-
             </div>
         </div>
     );

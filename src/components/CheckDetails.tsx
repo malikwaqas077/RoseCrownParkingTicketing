@@ -15,17 +15,19 @@ interface CheckDetailsProps {
 const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, config, nickname, onGoBack, onContinue, flowName }) => {
   const theme = config.config.checkDetailsScreen;
   const [transactionMessage, setTransactionMessage] = useState<string | null>(null);
-  const [transactionStatus, setTransactionStatus] = useState<string | null>(null);
   const [showRetry, setShowRetry] = useState<boolean>(false);
   const [paymentProcessed, setPaymentProcessed] = useState<boolean>(false);
   const [isPaymentInProgress, setIsPaymentInProgress] = useState<boolean>(false);
+  const [isGoBackDisabled, setIsGoBackDisabled] = useState<boolean>(false);
 
   useEffect(() => {
     window.handlePaymentResponse = function(response: { transaction_status: string }) {
       console.log('Payment Response:', response);
       setTransactionMessage(response.transaction_status);
       setIsPaymentInProgress(false);
+      setIsGoBackDisabled(false);
       if (response.transaction_status === 'Transaction Successful') {
+        setPaymentProcessed(true);
         onContinue();
       } else {
         setShowRetry(true);
@@ -40,6 +42,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     const clientReference = 'test_reference';
     const paymentUrl = `/api/makepayment?amount=${amount}&client_reference=${clientReference}`;
     setIsPaymentInProgress(true);
+    setIsGoBackDisabled(true);
     window.location.href = paymentUrl;
   };
 
@@ -49,13 +52,13 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
   };
 
   const handleModalClose = () => {
-    setShowRetry(false);
-    setTransactionMessage(null);
+    window.location.href = '/';
   };
 
   const handleRetry = () => {
     setShowRetry(false);
     setIsPaymentInProgress(true);
+    setIsGoBackDisabled(true);
     handlePayment();
   };
 
@@ -121,15 +124,16 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
           </>
         )}
         <button
-          onClick={handleCancelTransaction}
-          className={`w-full font-bold py-3 bg-transparent border-2 border-red-600 text-red-600 rounded-lg hover:bg-gray-100`}
+          onClick={onGoBack}
+          className={`w-full font-bold py-3 bg-transparent border-2 border-red-600 text-red-600 rounded-lg hover:bg-gray-100 ${isGoBackDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          disabled={isGoBackDisabled}
         >
           GO BACK & EDIT DETAILS
         </button>
       </div>
       {showRetry && (
         <ErrorModal
-          title={transactionStatus ?? 'Transaction Error'}
+          title={transactionMessage ?? 'Transaction Error'}
           message={transactionMessage ?? 'An error occurred'}
           onRetry={handleRetry}
           onClose={handleModalClose}
