@@ -46,10 +46,10 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     window.location.href = paymentUrl;
   };
 
-  const handleCancelTransaction = () => {
-    const cancelUrl = '/api/canceltransaction';
-    window.location.href = cancelUrl;
-  };
+  // const handleCancelTransaction = () => {
+  //   const cancelUrl = '/api/canceltransaction';
+  //   window.location.href = cancelUrl;
+  // };
 
   const handleModalClose = () => {
     window.location.href = '/';

@@ -8,61 +8,50 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 app.use(cors());
-app.use(express.static(path.join(__dirname, '../dist'))); // Adjust this path if your frontend build directory is different
+app.use(express.static(path.join(__dirname, '../dist')));
 
 const endpoint = process.env.COSMOS_DB_ENDPOINT;
 const key = process.env.COSMOS_DB_KEY;
 const databaseId = process.env.COSMOS_DB_DATABASE_ID;
-const containerId = process.env.COSMOS_DB_CONTAINER_ID;
+const sitesContainerId = process.env.COSMOS_DB_SITES_CONTAINER_ID;
+const flowsContainerId = process.env.COSMOS_DB_FLOWS_CONTAINER_ID;
 
 const client = new CosmosClient({ endpoint, key });
 
 // Middleware to handle JSON requests
 app.use(express.json());
 
-// Example data
-const data = [
-  { id: 1, Days: 1 },
-  { id: 2, Days: 2 },
-  { id: 3, Days: 3 },
-  { id: 4, Days: 4 },
-  { id: 5, Days: 5 },
-  { id: 6, Days: 6 },
-  { id: 7, Days: 7 },
-  { id: 8, Days: 8 },
-  { id: 9, Days: 9 },
-  { id: 10, Days: 10 },
-];
+// Route to handle user login
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+  console.log(`Login attempt for email: ${email}`);
 
-const parking_fee = [
-  { id: 1, Fee: "UP TO 1 HR - £1" },
-  { id: 2, Fee: "UP TO 2 HR - £2" },
-  { id: 3, Fee: "UP TO 3 HR - £3" },
-  { id: 4, Fee: "UP TO 4 HR - £4" },
-  { id: 5, Fee: "UP TO 5 HR - £5" },
-  { id: 6, Fee: "UP TO 5 HR - £6" },
-  { id: 7, Fee: "UP TO 5 HR - £7" },
-  { id: 8, Fee: "UP TO 5 HR - £8" },
-  { id: 9, Fee: "UP TO 5 HR - £9" },
-  { id: 10, Fee: "UP TO 5 HR - £10" },
-];
+  try {
+    const querySpec = {
+      query: "SELECT * FROM c WHERE c.email = @Email",
+      parameters: [{ name: "@Email", value: email }]
+    };
 
-const parking_fee_without_hours = parking_fee.map(item => {
-  const feeValue = parseFloat(item.Fee.split(' - ')[1].slice(1)).toFixed(2);
-  return { id: item.id, Fee: `£${feeValue}` };
-});
+    const { resources: users } = await client.database(databaseId).container(sitesContainerId).items.query(querySpec).fetchAll();
 
-// Your existing routes
-app.get('/api/days', (req, res) => {
-  res.json(data);
-});
+    if (users.length > 0) {
+      const user = users[0];
+      console.log("User found:", user);
 
-app.get('/api/parking-fee', (req, res) => {
-  res.json(parking_fee);
-});
-
-app.get('/api/parking-fee-without-hours', (req, res) => {
-  res.json(parking_fee_without_hours);
+      if (password === user.password) {
+        res.json({ message: 'Login successful', user });
+      } else {
+        console.log('Password does not match');
+        res.status(401).json({ message: 'Invalid email or password' });
+      }
+    } else {
+      console.log('User not found');
+      res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error) {
+    console.error('Error during login:', error);
+    res.status(500).json({ error: 'Internal Server Error' });
+  }
 });
 
 // Route to get configuration by siteId
@@ -80,7 +69,7 @@ app.get('/api/config/:siteId', async (req, res) => {
 
   try {
     console.log(`Fetching config for siteId: ${siteId}`);
-    const { resources: items } = await client.database(databaseId).container(containerId).items.query(querySpec).fetchAll();
+    const { resources: items } = await client.database(databaseId).container(sitesContainerId).items.query(querySpec).fetchAll();
     if (items.length > 0) {
       console.log(`Config found: ${JSON.stringify(items[0])}`);
       res.json(items[0]);
@@ -90,6 +79,67 @@ app.get('/api/config/:siteId', async (req, res) => {
     }
   } catch (error) {
     console.error('Error fetching config:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Route to get all flows for dropdown
+app.get('/api/flows', async (req, res) => {
+  try {
+    const querySpec = { query: "SELECT * from c" };
+    const { resources: flows } = await client.database(databaseId).container(flowsContainerId).items.query(querySpec).fetchAll();
+    res.json(flows);
+  } catch (error) {
+    console.error('Error fetching flows:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Route to get all sites
+app.get('/api/sites', async (req, res) => {
+  try {
+    const querySpec = { query: "SELECT * from c" };
+    const { resources: sites } = await client.database(databaseId).container(sitesContainerId).items.query(querySpec).fetchAll();
+    res.json(sites);
+  } catch (error) {
+    console.error('Error fetching sites:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Route to update a flow
+app.put('/api/flows/:flowId', async (req, res) => {
+  const flowId = req.params.flowId;
+  const updatedConfig = req.body;
+
+  try {
+    const { resource: updatedItem } = await client.database(databaseId).container(flowsContainerId).item(flowId).replace(updatedConfig);
+    res.status(200).json(updatedItem);
+  } catch (error) {
+    console.error('Error updating flow:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+// Route to add a new site
+app.post('/api/sites', async (req, res) => {
+  const { siteName, address, contactNumber, email, password, workflowName } = req.body;
+  const newSite = {
+    siteId: `site${Date.now()}`,
+    siteName,
+    address,
+    contactNumber,
+    email,
+    password,
+    workflowName
+  };
+
+  try {
+    const { resource: createdItem } = await client.database(databaseId).container(sitesContainerId).items.create(newSite);
+    res.status(201).json(createdItem);
+  } catch (error) {
+    console.error('Error creating site:', error);
     res.status(500).json({ error: error.message });
   }
 });

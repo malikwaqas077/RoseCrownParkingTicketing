@@ -3,12 +3,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 800px; /* Set your desired width */
-  height: 600px; /* Set your desired height */
-  margin: auto; /* Center the element within the viewport */
-  padding: 2rem;
-  text-align: center;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Optional: add a shadow for better visualization */
-  border: 1px solid #eaeaea; /* Optional: add a border for better visualization */
-  background-color: #ffffff; /* Ensure background color is correct */
+  height: 100vh;
+  width: 100vw;
+  background-color: #f0f0f0;
+}
+
+body.admin #root {
+  display: block;
+  height: 100vh;
+  width: 100vw;
+  background-color: #ffffff;
 }

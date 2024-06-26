@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { system_config } from '../config/config';
-import ErrorModal from './ErrorModal'; // Assuming ErrorModal is a component you use
-import Loader from './Loader'; // Assuming Loader is a component you use
+// import ErrorModal from './ErrorModal'; // Assuming ErrorModal is a component you use
+// import Loader from './Loader'; // Assuming Loader is a component you use
 
 interface DecisionProps {
     regNumber: string;
