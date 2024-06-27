@@ -1,12 +1,9 @@
-// src/components/EnterStayDuration.tsx
 import React, { useState, useEffect } from 'react';
-//import { themes } from '../config/themes';
 
 interface EnterStayDurationProps {
-  // flow: keyof typeof themes;
   onSelect: (daysOrFee: string | number) => void;
-  config:any;
-  flowName:string;
+  config: any;
+  flowName: string;
 }
 
 const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect, flowName }) => {
@@ -14,13 +11,11 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   const [options, setOptions] = useState<string[] | number[]>([]);
   const [showMore, setShowMore] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | number | null>(null);
-  console.log(flowName)
-  console.log(theme)
 
   useEffect(() => {
-    let URL;
+    let URL = '';
     const apiUrl = import.meta.env.VITE_API_URL;
-
+    console.log
     if (flowName === 'MandatoryDonationFlow') {
       URL = `${apiUrl}/api/parking-fee`;
     } else if (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
@@ -37,7 +32,8 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
         } else {
           setOptions(data.map((item: { Days: number }) => item.Days));
         }
-      });
+      })
+      .catch(error => console.error('Error fetching options:', error));
   }, [flowName]);
 
   const handleOptionClick = (option: string | number) => {
@@ -48,9 +44,10 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   const handleMoreClick = () => setShowMore(!showMore);
 
   const handleSkipClick = () => {
-    fetch("http://localhost:5000/api/days")
+    fetch(`${import.meta.env.VITE_API_URL}/api/days`)
       .then(response => response.json())
-      .then(data => setOptions(data.map((item: { Days: number }) => item.Days)));
+      .then(data => setOptions(data.map((item: { Days: number }) => item.Days)))
+      .catch(error => console.error('Error fetching skip options:', error));
   };
 
   return (

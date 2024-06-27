@@ -7,8 +7,55 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 5000;
 
+const parking_fee = [
+  { id: 1, Fee: "UP TO 1 HR - £1" },
+  { id: 2, Fee: "UP TO 2 HR - £2" },
+  { id: 3, Fee: "UP TO 3 HR - £3" },
+  { id: 4, Fee: "UP TO 4 HR - £4" },
+  { id: 5, Fee: "UP TO 5 HR - £5" },
+  { id: 6, Fee: "UP TO 5 HR - £6" },
+  { id: 7, Fee: "UP TO 5 HR - £7" },
+  { id: 8, Fee: "UP TO 5 HR - £8" },
+  { id: 9, Fee: "UP TO 5 HR - £9" },
+  { id: 10, Fee: "UP TO 5 HR - £10" },
+];
+
+const parking_fee_without_hours = [
+  { id: 1, Fee: "£1" },
+  { id: 2, Fee: "£2" },
+  { id: 3, Fee: "£3" },
+  { id: 4, Fee: "£4" },
+  { id: 5, Fee: "£5" },
+  { id: 6, Fee: "£6" },
+  { id: 7, Fee: "£7" },
+  { id: 8, Fee: "£8" },
+  { id: 9, Fee: "£9" },
+  { id: 10, Fee: "£10" },
+];
+
+const days = [
+  { id: 1, Days: 1 },
+  { id: 2, Days: 2 },
+  { id: 3, Days: 3 },
+  { id: 4, Days: 4 },
+  { id: 5, Days: 5 },
+];
+
 app.use(cors());
 app.use(express.static(path.join(__dirname, '../dist')));
+
+// Your existing routes
+app.get('/api/days', (req, res) => {
+  res.json(days);
+});
+
+app.get('/api/parking-fee', (req, res) => {
+  res.json(parking_fee);
+});
+
+app.get('/api/parking-fee-without-hours', (req, res) => {
+  res.json(parking_fee_without_hours);
+});
 
 const endpoint = process.env.COSMOS_DB_ENDPOINT;
 const key = process.env.COSMOS_DB_KEY;
@@ -21,11 +68,10 @@ const client = new CosmosClient({ endpoint, key });
 // Middleware to handle JSON requests
 app.use(express.json());
 
-
-// Route to handle user login
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   console.log(`Login attempt for email: ${email}`);
+  console.log(`Login attempt for password: ${password}`);
 
   try {
     // Ensure email is a string before using it in the query
@@ -60,8 +106,6 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-
-// Route to get configuration by workflow name
 app.get('/api/flows/:workflowName', async (req, res) => {
   const workflowName = req.params.workflowName;
   const querySpec = {
@@ -90,8 +134,6 @@ app.get('/api/flows/:workflowName', async (req, res) => {
   }
 });
 
-
-// Route to get configuration by siteId
 app.get('/api/config/:siteId', async (req, res) => {
   const siteId = req.params.siteId;
   const querySpec = {
@@ -120,7 +162,6 @@ app.get('/api/config/:siteId', async (req, res) => {
   }
 });
 
-// Route to get all flows for dropdown
 app.get('/api/flows', async (req, res) => {
   try {
     const querySpec = { query: "SELECT * from c" };
@@ -132,7 +173,6 @@ app.get('/api/flows', async (req, res) => {
   }
 });
 
-// Route to get all sites
 app.get('/api/sites', async (req, res) => {
   try {
     const querySpec = { query: "SELECT * from c" };
@@ -144,7 +184,6 @@ app.get('/api/sites', async (req, res) => {
   }
 });
 
-// Route to update a flow
 app.put('/api/flows/:flowId', async (req, res) => {
   const flowId = req.params.flowId;
   const updatedConfig = req.body;
@@ -158,8 +197,6 @@ app.put('/api/flows/:flowId', async (req, res) => {
   }
 });
 
-
-// Route to add a new site
 app.post('/api/sites', async (req, res) => {
   const { siteName, address, contactNumber, email, password, workflowName } = req.body;
   const newSite = {
@@ -181,7 +218,6 @@ app.post('/api/sites', async (req, res) => {
   }
 });
 
-// Serve the frontend build files for any other routes
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html')); // Adjust this path if necessary
 });
