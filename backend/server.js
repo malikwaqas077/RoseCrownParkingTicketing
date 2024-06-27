@@ -21,12 +21,18 @@ const client = new CosmosClient({ endpoint, key });
 // Middleware to handle JSON requests
 app.use(express.json());
 
+
 // Route to handle user login
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   console.log(`Login attempt for email: ${email}`);
 
   try {
+    // Ensure email is a string before using it in the query
+    if (typeof email !== 'string' || typeof password !== 'string') {
+      throw new Error('Invalid input: email and password must be strings');
+    }
+
     const querySpec = {
       query: "SELECT * FROM c WHERE c.email = @Email",
       parameters: [{ name: "@Email", value: email }]
@@ -49,10 +55,11 @@ app.post('/api/login', async (req, res) => {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    console.error('Error during login:', error);
+    console.error('Error during login:', error.message); // Log the error message
     res.status(500).json({ error: 'Internal Server Error' });
   }
 });
+
 
 // Route to get configuration by workflow name
 app.get('/api/flows/:workflowName', async (req, res) => {
