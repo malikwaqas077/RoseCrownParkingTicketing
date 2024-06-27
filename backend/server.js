@@ -54,6 +54,36 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Route to get configuration by workflow name
+app.get('/api/flows/:workflowName', async (req, res) => {
+  const workflowName = req.params.workflowName;
+  const querySpec = {
+    query: "SELECT * from c WHERE c.workflowName = @workflowName",
+    parameters: [
+      {
+        name: "@workflowName",
+        value: workflowName
+      }
+    ]
+  };
+
+  try {
+    console.log(`Fetching config for workflowName: ${workflowName}`);
+    const { resources: items } = await client.database(databaseId).container(flowsContainerId).items.query(querySpec).fetchAll();
+    if (items.length > 0) {
+      console.log(`Config found: ${JSON.stringify(items[0])}`);
+      res.json(items[0]);
+    } else {
+      console.log('Config not found');
+      res.status(404).json({ error: "Configuration not found" });
+    }
+  } catch (error) {
+    console.error('Error fetching config:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
 // Route to get configuration by siteId
 app.get('/api/config/:siteId', async (req, res) => {
   const siteId = req.params.siteId;

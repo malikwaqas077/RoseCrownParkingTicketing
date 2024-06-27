@@ -5,11 +5,21 @@ import { useAuth } from './context/AuthContext';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
+  role: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
-  return isAuthenticated ? <>{children}</> : <Navigate to="/login" />;
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
+  const { isAuthenticated, user } = useAuth();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
+
+  if (user.role !== role) {
+    return <Navigate to="/" />;
+  }
+
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

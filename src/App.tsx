@@ -1,28 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
 import MainComponent from './workflows/NoParkFeeFlow/MainComponent';
 import Login from './admin/components/Login';
 import AdminDashboard from './admin/components/AdminDashboard';
-import { AuthProvider } from './context/AuthContext';
-import { fetchConfigBySiteId } from './services/cosmosService';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import axios from 'axios';
 import ProtectedRoute from './ProtectedRoute';
 
 const App: React.FC = () => {
-  const [config, setConfig] = useState<any>(null);
-
-  const getConfig = async () => {
-    const siteId = "4"; // You can dynamically set this based on the logged-in user
-    try {
-      const configData = await fetchConfigBySiteId(siteId);
-      console.log('Fetched config:', configData);
-      setConfig(configData);
-    } catch (error) {
-      console.error('Error fetching config:', error);
-    }
-  };
-
-  console.log(getConfig);
-
   return (
     <AuthProvider>
       <Router>
@@ -32,13 +17,19 @@ const App: React.FC = () => {
           <Route
             path="/admin"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute role="admin">
                 <AdminDashboard />
               </ProtectedRoute>
             }
           />
-          <Route path="/" element={<MainComponent config={config} />} />
-          {/* Add more routes as needed */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute role="user">
+                <UserComponent />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </Router>
     </AuthProvider>
@@ -57,6 +48,34 @@ const RouteChangeHandler: React.FC = () => {
   }, [location]);
 
   return null;
+};
+
+const UserComponent: React.FC = () => {
+  const { user } = useAuth();
+  const [config, setConfig] = useState<any>(null);
+
+  const getConfig = async (workflowName: string) => {
+    try {
+      console.log("Fetching config for workflow:", workflowName);
+      const response = await axios.get(`/api/flows/${workflowName}`);
+      console.log("Config response:", response);
+      setConfig(response.data);
+    } catch (error) {
+      console.error('Error fetching config:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user && user.role === 'user' && user.workflowName) {
+      getConfig(user.workflowName);
+    }
+  }, [user]);
+
+  if (!config) {
+    return <div>Loading configuration...</div>;
+  }
+
+  return <MainComponent config={config} />;
 };
 
 export default App;

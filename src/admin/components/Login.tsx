@@ -13,8 +13,13 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await handleLogin(email, password);
-      navigate('/admin');
+      const user = await handleLogin(email, password);
+      console.log(`User role: ${user.role}`); // Log the user role
+      if (user.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
     } catch (error) {
       console.error('Login error', error);
       // TODO: Add error handling UI
@@ -22,9 +27,9 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen">
+    <div className="flex justify-center items-center min-h-screen ">
       <div className="bg-white p-8 rounded-xl shadow-2xl w-96 transform transition-all hover:scale-105 duration-300">
-        <h1 className="text-3xl font-extrabold mb-6 text-center text-gray-800">ADMIN</h1>
+        <h1 className="text-3xl font-extrabold mb-6 text-center text-gray-800">Login</h1>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="relative">
             <FaEnvelope className="absolute top-3 left-3 text-gray-400" />

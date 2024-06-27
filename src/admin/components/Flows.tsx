@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
+import axios from 'axios';
 
 interface FlowsProps {
   flow: any;
 }
 
 const Flows: React.FC<FlowsProps> = ({ flow }) => {
+  const [config, setConfig] = useState(flow.config);
+
   const renderFormFields = (config: any, parentKey: string = '') => {
     return Object.keys(config).map((key) => {
       const fullKey = parentKey ? `${parentKey}.${key}` : key;
@@ -37,7 +40,7 @@ const Flows: React.FC<FlowsProps> = ({ flow }) => {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
     const { value } = e.target;
     const keys = key.split('.');
-    const newConfig = { ...flow.config };
+    const newConfig = { ...config };
 
     let temp = newConfig;
     for (let i = 0; i < keys.length - 1; i++) {
@@ -45,14 +48,25 @@ const Flows: React.FC<FlowsProps> = ({ flow }) => {
     }
     temp[keys[keys.length - 1]] = value;
 
-    flow.config = newConfig;
+    setConfig(newConfig);
+  };
+
+  const handleSaveClick = async (flowId: string) => {
+    try {
+      await axios.put(`/api/flows/${flowId}`, { config }, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+      });
+      alert('Flow configuration saved successfully!');
+    } catch (error) {
+      console.error('Error saving flow configuration:', error);
+    }
   };
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-auto p-8 h-full">
       <h2 className="text-2xl font-bold mb-8">{flow.workflowName}</h2>
       <form className="grid grid-cols-2 gap-4">
-        {renderFormFields(flow.config)}
+        {renderFormFields(config)}
         <div className="col-span-2">
           <button
             type="button"
