@@ -2,10 +2,15 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const { CosmosClient } = require('@azure/cosmos');
+const jwt = require('jsonwebtoken');
+const bcrypt = require('bcryptjs');
+const { log } = require('console');
 require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 5000;
+
+
 
 const parking_fee = [
   { id: 1, Fee: "UP TO 1 HR - £1" },
@@ -62,10 +67,24 @@ const databaseId = process.env.COSMOS_DB_DATABASE_ID;
 const sitesContainerId = process.env.COSMOS_DB_SITES_CONTAINER_ID;
 const flowsContainerId = process.env.COSMOS_DB_FLOWS_CONTAINER_ID;
 const siteFlowConfigsContainerId = process.env.COSMOS_DB_SITE_FLOW_CONFIGS_CONTAINER_ID;
+const JWT_SECRET = process.env.JWT_SECRET;
+const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h';
 
 const client = new CosmosClient({ endpoint, key });
 
 app.use(express.json());
+
+// Middleware to authenticate and verify JWT
+const authenticateToken = (req, res, next) => {
+  const token = req.header('Authorization')?.split(' ')[1];
+  if (!token) return res.sendStatus(401);
+
+  jwt.verify(token, JWT_SECRET, (err, user) => {
+    if (err) return res.sendStatus(403);
+    req.user = user;
+    next();
+  });
+};
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
@@ -87,8 +106,14 @@ app.post('/api/login', async (req, res) => {
       const user = users[0];
       console.log("User found:", user);
 
-      if (password === user.password) {
-        res.json({ message: 'Login successful', user });
+      // Check password with bcrypt
+      const isPasswordValid = await bcrypt.compare(password, user.password);
+      if (isPasswordValid) {
+        console.log("password is valid")
+        // Generate JWT
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, siteId: user.siteId, workflowName: user.workflowName }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+        console.log(token, user)
+        res.json({ message: 'Login successful', token, user });
       } else {
         console.log('Password does not match');
         res.status(401).json({ message: 'Invalid email or password' });
@@ -103,7 +128,12 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
-app.put('/api/site-config/:siteId', async (req, res) => {
+app.get('/api/protected', authenticateToken, (req, res) => {
+  res.json({ user: req.user });
+});
+
+
+app.put('/api/site-config/:siteId', authenticateToken, async (req, res) => {
   const { siteId } = req.params;
   const updatedConfig = req.body;
 
@@ -142,7 +172,7 @@ app.put('/api/site-config/:siteId', async (req, res) => {
 });
 
 
-app.get('/api/site-config/:siteId', async (req, res) => {
+app.get('/api/site-config/:siteId', authenticateToken, async (req, res) => {
   const { siteId } = req.params;
   const querySpec = {
     query: "SELECT * FROM c WHERE c.siteId = @siteId",
@@ -165,7 +195,7 @@ app.get('/api/site-config/:siteId', async (req, res) => {
   }
 });
 
-app.put('/api/site-config/:siteId/:flowId', async (req, res) => {
+app.put('/api/site-config/:siteId/:flowId', authenticateToken, async (req, res) => {
   const { siteId, flowId } = req.params;
   const updatedConfig = req.body;
 
@@ -204,7 +234,7 @@ app.put('/api/site-config/:siteId/:flowId', async (req, res) => {
   }
 });
 
-app.get('/api/flows/:workflowName', async (req, res) => {
+app.get('/api/flows/:workflowName', authenticateToken, async (req, res) => {
   const workflowName = req.params.workflowName;
   const querySpec = {
     query: "SELECT * from c WHERE c.workflowName = @workflowName",
@@ -227,7 +257,7 @@ app.get('/api/flows/:workflowName', async (req, res) => {
   }
 });
 
-app.get('/api/config/:siteId', async (req, res) => {
+app.get('/api/config/:siteId', authenticateToken, async (req, res) => {
   const siteId = req.params.siteId;
   const querySpec = {
     query: "SELECT * from c WHERE c.siteId = @siteId",
@@ -250,7 +280,7 @@ app.get('/api/config/:siteId', async (req, res) => {
   }
 });
 
-app.get('/api/flows', async (req, res) => {
+app.get('/api/flows', authenticateToken, async (req, res) => {
   try {
     const querySpec = { query: "SELECT * from c" };
     const { resources: flows } = await client.database(databaseId).container(flowsContainerId).items.query(querySpec).fetchAll();
@@ -261,7 +291,7 @@ app.get('/api/flows', async (req, res) => {
   }
 });
 
-app.get('/api/sites', async (req, res) => {
+app.get('/api/sites', authenticateToken, async (req, res) => {
   try {
     const querySpec = { query: "SELECT * from c" };
     const { resources: sites } = await client.database(databaseId).container(sitesContainerId).items.query(querySpec).fetchAll();
@@ -272,7 +302,7 @@ app.get('/api/sites', async (req, res) => {
   }
 });
 
-app.put('/api/flows/:flowId', async (req, res) => {
+app.put('/api/flows/:flowId', authenticateToken, async (req, res) => {
   const flowId = req.params.flowId;
   const updatedConfig = req.body;
 
@@ -285,16 +315,17 @@ app.put('/api/flows/:flowId', async (req, res) => {
   }
 });
 
-app.post('/api/sites', async (req, res) => {
+app.post('/api/sites', authenticateToken, async (req, res) => {
   const { siteName, address, contactNumber, email, password, workflowName } = req.body;
   const newSiteId = `site${Date.now()}`;
+  const hashedPassword = await bcrypt.hash(password, 10);  // Hash password
   const newSite = {
     siteId: newSiteId,
     siteName,
     address,
     contactNumber,
     email,
-    password,
+    password: hashedPassword,  // Store hashed password
     workflowName
   };
 
@@ -334,8 +365,6 @@ app.post('/api/sites', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
-
-
 
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../dist', 'index.html'));

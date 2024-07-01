@@ -7,6 +7,7 @@ import AdminDashboard from './admin/components/AdminDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import axios from 'axios';
 import ProtectedRoute from './ProtectedRoute';
+import { FcWorkflow } from 'react-icons/fc';
 
 const App: React.FC = () => {
   return (
@@ -55,10 +56,12 @@ const UserComponent: React.FC = () => {
   const { user } = useAuth();
   const [config, setConfig] = useState<any>(null);
 
-  const getConfig = async (siteId: string) => {
+  const getConfig = async (siteId: string, workflowName: string) => {
     try {
-      console.log("Fetching config for site:", siteId);
-      const response = await axios.get(`/api/site-config/${siteId}`);
+      console.log("Fetching config for site:", siteId, "and workflow:", workflowName);
+      const response = await axios.get(`/api/site-config/${siteId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
       console.log("Config response:", response);
       setConfig(response.data);
     } catch (error) {
@@ -68,7 +71,7 @@ const UserComponent: React.FC = () => {
 
   useEffect(() => {
     if (user && user.role === 'user' && user.siteId && user.workflowName) {
-      getConfig(user.siteId);
+      getConfig(user.siteId, user.workflowName);
     }
   }, [user]);
 

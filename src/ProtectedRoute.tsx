@@ -9,9 +9,15 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, role }) => {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading } = useAuth();
+
+  if (isLoading) {
+    // Optionally, render a loading spinner or message while authentication state is being determined
+    return <div>Loading...</div>;
+  }
 
   if (!isAuthenticated) {
+    console.log("user is not logged in")
     return <Navigate to="/login" />;
   }
 

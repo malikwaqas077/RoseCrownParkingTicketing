@@ -3,8 +3,10 @@ import axios from 'axios';
 import { FaHome, FaCogs, FaBolt, FaChargingStation, FaPalette, FaUsers, FaSignOutAlt, FaChevronDown } from 'react-icons/fa';
 import AddSiteModal from './AddSiteModal';
 import Flows from './Flows';
+import { useAuth } from '../../context/AuthContext'; // Import useAuth
 
 const AdminDashboard: React.FC = () => {
+  const { handleLogout } = useAuth(); // Get handleLogout from useAuth
   const [flows, setFlows] = useState<any[]>([]);
   const [sites, setSites] = useState<any[]>([]);
   const [currentView, setCurrentView] = useState<string>('home');
@@ -63,6 +65,10 @@ const AdminDashboard: React.FC = () => {
     setSelectedFlow(flow);
     setSelectedSiteId(siteId);
     setCurrentView('edit-flow');
+  };
+
+  const handleLogoutClick = () => {
+    handleLogout(); // Call handleLogout from useAuth
   };
 
   const renderContent = () => {
@@ -161,7 +167,7 @@ const AdminDashboard: React.FC = () => {
             ].map((item, index) => (
               <button
                 key={index}
-                onClick={() => handleNavClick(item.view)}
+                onClick={() => item.label === 'Logout' ? handleLogoutClick() : handleNavClick(item.view)}
                 className={`flex items-center space-x-3 px-4 py-3 rounded-lg hover:bg-blue-700 transition duration-200 ${currentView === item.view ? 'bg-blue-700' : ''}`}
               >
                 {item.icon}
