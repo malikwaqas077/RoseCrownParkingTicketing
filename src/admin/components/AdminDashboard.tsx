@@ -9,6 +9,7 @@ const AdminDashboard: React.FC = () => {
   const [sites, setSites] = useState<any[]>([]);
   const [currentView, setCurrentView] = useState<string>('home');
   const [selectedFlow, setSelectedFlow] = useState<any>(null);
+  const [selectedSiteId, setSelectedSiteId] = useState<string | null>(null);
   const [showFlowsDropdown, setShowFlowsDropdown] = useState<boolean>(false);
 
   useEffect(() => {
@@ -53,8 +54,15 @@ const AdminDashboard: React.FC = () => {
 
   const handleFlowSelect = (flow: any) => {
     setSelectedFlow(flow);
+    setSelectedSiteId(null); // Reset selected siteId when a flow is selected from the dropdown
     setShowFlowsDropdown(false);
     setCurrentView('flows'); // Switch to flows view when a flow is selected
+  };
+
+  const handleEditClick = (flow: any, siteId: string) => {
+    setSelectedFlow(flow);
+    setSelectedSiteId(siteId);
+    setCurrentView('edit-flow');
   };
 
   const renderContent = () => {
@@ -74,6 +82,7 @@ const AdminDashboard: React.FC = () => {
                   <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contact Number</th>
                   <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Workflow Name</th>
+                  <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
@@ -84,6 +93,14 @@ const AdminDashboard: React.FC = () => {
                     <td className="py-4 px-4">{site.contactNumber}</td>
                     <td className="py-4 px-4">{site.email}</td>
                     <td className="py-4 px-4">{site.workflowName}</td>
+                    <td className="py-4 px-4">
+                      <button
+                        onClick={() => handleEditClick(site.workflowName, site.siteId)}
+                        className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                      >
+                        Edit
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -92,7 +109,9 @@ const AdminDashboard: React.FC = () => {
         </div>
       );
     } else if (currentView === 'flows' && selectedFlow) {
-      return <Flows flow={selectedFlow} />;
+      return <Flows flow={selectedFlow} siteId={null} isEditing={false} />;
+    } else if (currentView === 'edit-flow' && selectedFlow && selectedSiteId) {
+      return <Flows flow={selectedFlow} siteId={selectedSiteId} isEditing={true} />;
     }
     return null;
   };

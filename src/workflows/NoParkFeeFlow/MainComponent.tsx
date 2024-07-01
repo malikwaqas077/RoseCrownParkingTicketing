@@ -8,7 +8,7 @@ import GiveNickname from '../../components/GiveNickname';
 import CheckDetails from '../../components/CheckDetails';
 import Decision from '../../components/Decision';
 
-const MainComponent: React.FC<{ config: any }> = ({ config }) => {
+const MainComponent: React.FC<{ config: any; workflowName : any }> = ({ config, workflowName }) => {
   const [step, setStep] = useState(0);
   const [selectedDayOrFee, setSelectedDayOrFee] = useState<string | number | null>(null);
   const [regNumber, setRegNumber] = useState<string>('');
@@ -16,8 +16,8 @@ const MainComponent: React.FC<{ config: any }> = ({ config }) => {
   const [parkingEndTime, setParkingEndTime] = useState<string>('12:00:00 - 00/00/0000');
   const [isPaying, setIsPaying] = useState(false); // Add state for isPaying
 
-  const flowName = config.workflowName; // Use the flow from the config
-  console.log(flowName)
+  const flowName = workflowName; // Use the flow from the config
+  console.log("config name is :", flowName)
 
   const nextStep = () => {
     console.log("Proceeding to next step", step + 1);

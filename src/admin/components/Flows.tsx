@@ -1,14 +1,40 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 interface FlowsProps {
   flow: any;
+  siteId: string | null;
+  isEditing: boolean;
 }
 
-const Flows: React.FC<FlowsProps> = ({ flow }) => {
-  const [config, setConfig] = useState(flow.config);
+const Flows: React.FC<FlowsProps> = ({ flow, siteId, isEditing }) => {
+  const [config, setConfig] = useState<any>(null);
+
+  useEffect(() => {
+    const fetchConfig = async () => {
+      try {
+        let response;
+        if (isEditing && siteId) {
+          response = await axios.get(`/api/site-config/${siteId}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          });
+        } else {
+          response = await axios.get(`/api/flows/${flow.workflowName}`, {
+            headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+          });
+        }
+        setConfig(response.data.config);
+      } catch (error) {
+        console.error('Error fetching configuration:', error);
+      }
+    };
+
+    fetchConfig();
+  }, [flow.workflowName, siteId, isEditing]);
 
   const renderFormFields = (config: any, parentKey: string = '') => {
+    if (!config) return null;
+
     return Object.keys(config).map((key) => {
       const fullKey = parentKey ? `${parentKey}.${key}` : key;
       const value = config[key];
@@ -51,16 +77,26 @@ const Flows: React.FC<FlowsProps> = ({ flow }) => {
     setConfig(newConfig);
   };
 
-  const handleSaveClick = async (flowId: string) => {
+  const handleSaveClick = async () => {
     try {
-      await axios.put(`/api/flows/${flowId}`, { config }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
-      });
+      if (isEditing && siteId) {
+        await axios.put(`/api/site-config/${siteId}`, { config }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+      } else {
+        await axios.put(`/api/flows/${flow.id}`, { config }, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+      }
       alert('Flow configuration saved successfully!');
     } catch (error) {
       console.error('Error saving flow configuration:', error);
     }
   };
+
+  if (!config) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-auto p-8 h-full">
@@ -70,7 +106,7 @@ const Flows: React.FC<FlowsProps> = ({ flow }) => {
         <div className="col-span-2">
           <button
             type="button"
-            onClick={() => handleSaveClick(flow.id)}
+            onClick={handleSaveClick}
             className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
           >
             Save

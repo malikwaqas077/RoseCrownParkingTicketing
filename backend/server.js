@@ -44,7 +44,6 @@ const days = [
 app.use(cors());
 app.use(express.static(path.join(__dirname, '../dist')));
 
-// Your existing routes
 app.get('/api/days', (req, res) => {
   res.json(days);
 });
@@ -62,19 +61,17 @@ const key = process.env.COSMOS_DB_KEY;
 const databaseId = process.env.COSMOS_DB_DATABASE_ID;
 const sitesContainerId = process.env.COSMOS_DB_SITES_CONTAINER_ID;
 const flowsContainerId = process.env.COSMOS_DB_FLOWS_CONTAINER_ID;
+const siteFlowConfigsContainerId = process.env.COSMOS_DB_SITE_FLOW_CONFIGS_CONTAINER_ID;
 
 const client = new CosmosClient({ endpoint, key });
 
-// Middleware to handle JSON requests
 app.use(express.json());
 
 app.post('/api/login', async (req, res) => {
   const { email, password } = req.body;
   console.log(`Login attempt for email: ${email}`);
-  console.log(`Login attempt for password: ${password}`);
 
   try {
-    // Ensure email is a string before using it in the query
     if (typeof email !== 'string' || typeof password !== 'string') {
       throw new Error('Invalid input: email and password must be strings');
     }
@@ -101,8 +98,109 @@ app.post('/api/login', async (req, res) => {
       res.status(401).json({ message: 'Invalid email or password' });
     }
   } catch (error) {
-    console.error('Error during login:', error.message); // Log the error message
+    console.error('Error during login:', error.message);
     res.status(500).json({ error: 'Internal Server Error' });
+  }
+});
+
+app.put('/api/site-config/:siteId', async (req, res) => {
+  const { siteId } = req.params;
+  const updatedConfig = req.body;
+
+  try {
+    const querySpec = {
+      query: "SELECT * FROM c WHERE c.siteId = @siteId",
+      parameters: [
+        { name: "@siteId", value: siteId }
+      ]
+    };
+
+    const { resources: items } = await client.database(databaseId).container(siteFlowConfigsContainerId).items.query(querySpec).fetchAll();
+    if (items.length > 0) {
+      const existingConfig = items[0];
+      const { resource: updatedItem } = await client.database(databaseId).container(siteFlowConfigsContainerId).item(existingConfig.id, existingConfig.siteId).replace({
+        id: existingConfig.id,
+        siteId: existingConfig.siteId,
+        SiteFlowConfigsId: existingConfig.SiteFlowConfigsId,  // Ensure partition key is included
+        config: updatedConfig.config
+      }, { partitionKey: existingConfig.SiteFlowConfigsId });  // Include partition key in the request header
+      res.status(200).json(updatedItem);
+    } else {
+      const newId = `${siteId}-${Date.now()}`;
+      const { resource: newItem } = await client.database(databaseId).container(siteFlowConfigsContainerId).items.create({
+        id: newId,
+        siteId,
+        SiteFlowConfigsId: siteId,  // Ensure partition key is set
+        config: updatedConfig.config
+      }, { partitionKey: siteId });  // Include partition key in the request header
+      res.status(201).json(newItem);
+    }
+  } catch (error) {
+    console.error('Error updating site-specific config:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+
+app.get('/api/site-config/:siteId', async (req, res) => {
+  const { siteId } = req.params;
+  const querySpec = {
+    query: "SELECT * FROM c WHERE c.siteId = @siteId",
+    parameters: [
+      { name: "@siteId", value: siteId }
+    ]
+  };
+
+  try {
+    console.log(`Fetching site-specific config for siteId: ${siteId}`);
+    const { resources: items } = await client.database(databaseId).container(siteFlowConfigsContainerId).items.query(querySpec).fetchAll();
+    if (items.length > 0) {
+      res.json(items[0]);
+    } else {
+      res.status(404).json({ error: "Site-specific configuration not found" });
+    }
+  } catch (error) {
+    console.error('Error fetching site-specific config:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+app.put('/api/site-config/:siteId/:flowId', async (req, res) => {
+  const { siteId, flowId } = req.params;
+  const updatedConfig = req.body;
+
+  try {
+    const querySpec = {
+      query: "SELECT * FROM c WHERE c.siteId = @siteId AND c.flowId = @flowId",
+      parameters: [
+        { name: "@siteId", value: siteId },
+        { name: "@flowId", value: flowId }
+      ]
+    };
+
+    const { resources: items } = await client.database(databaseId).container(siteFlowConfigsContainerId).items.query(querySpec).fetchAll();
+    if (items.length > 0) {
+      const existingConfig = items[0];
+      const { resource: updatedItem } = await client.database(databaseId).container(siteFlowConfigsContainerId).item(existingConfig.id, existingConfig.siteId).replace({
+        id: existingConfig.id,
+        siteId: existingConfig.siteId,
+        flowId: existingConfig.flowId,
+        config: updatedConfig.config
+      });
+      res.status(200).json(updatedItem);
+    } else {
+      const newId = `${siteId}-${flowId}-${Date.now()}`;
+      const { resource: newItem } = await client.database(databaseId).container(siteFlowConfigsContainerId).items.create({
+        id: newId,
+        siteId,
+        flowId,
+        config: updatedConfig.config
+      });
+      res.status(201).json(newItem);
+    }
+  } catch (error) {
+    console.error('Error updating site-specific config:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -111,10 +209,7 @@ app.get('/api/flows/:workflowName', async (req, res) => {
   const querySpec = {
     query: "SELECT * from c WHERE c.workflowName = @workflowName",
     parameters: [
-      {
-        name: "@workflowName",
-        value: workflowName
-      }
+      { name: "@workflowName", value: workflowName }
     ]
   };
 
@@ -122,10 +217,8 @@ app.get('/api/flows/:workflowName', async (req, res) => {
     console.log(`Fetching config for workflowName: ${workflowName}`);
     const { resources: items } = await client.database(databaseId).container(flowsContainerId).items.query(querySpec).fetchAll();
     if (items.length > 0) {
-      console.log(`Config found: ${JSON.stringify(items[0])}`);
       res.json(items[0]);
     } else {
-      console.log('Config not found');
       res.status(404).json({ error: "Configuration not found" });
     }
   } catch (error) {
@@ -139,10 +232,7 @@ app.get('/api/config/:siteId', async (req, res) => {
   const querySpec = {
     query: "SELECT * from c WHERE c.siteId = @siteId",
     parameters: [
-      {
-        name: "@siteId",
-        value: siteId
-      }
+      { name: "@siteId", value: siteId }
     ]
   };
 
@@ -150,10 +240,8 @@ app.get('/api/config/:siteId', async (req, res) => {
     console.log(`Fetching config for siteId: ${siteId}`);
     const { resources: items } = await client.database(databaseId).container(sitesContainerId).items.query(querySpec).fetchAll();
     if (items.length > 0) {
-      console.log(`Config found: ${JSON.stringify(items[0])}`);
       res.json(items[0]);
     } else {
-      console.log('Config not found');
       res.status(404).json({ error: "Configuration not found" });
     }
   } catch (error) {
@@ -199,8 +287,9 @@ app.put('/api/flows/:flowId', async (req, res) => {
 
 app.post('/api/sites', async (req, res) => {
   const { siteName, address, contactNumber, email, password, workflowName } = req.body;
+  const newSiteId = `site${Date.now()}`;
   const newSite = {
-    siteId: `site${Date.now()}`,
+    siteId: newSiteId,
     siteName,
     address,
     contactNumber,
@@ -210,16 +299,46 @@ app.post('/api/sites', async (req, res) => {
   };
 
   try {
-    const { resource: createdItem } = await client.database(databaseId).container(sitesContainerId).items.create(newSite);
-    res.status(201).json(createdItem);
+    // Create the new site
+    const { resource: createdSite } = await client.database(databaseId).container(sitesContainerId).items.create(newSite);
+
+    // Fetch the default flow configuration
+    const querySpec = {
+      query: "SELECT * from c WHERE c.workflowName = @workflowName",
+      parameters: [
+        { name: "@workflowName", value: workflowName }
+      ]
+    };
+    const { resources: flowConfigs } = await client.database(databaseId).container(flowsContainerId).items.query(querySpec).fetchAll();
+
+    if (flowConfigs.length === 0) {
+      return res.status(404).json({ error: 'Flow configuration not found' });
+    }
+
+    const defaultFlowConfig = flowConfigs[0].config;
+
+    // Create the site-specific flow configuration
+    const newSiteFlowConfig = {
+      id: `${newSiteId}-${Date.now()}`,  // Add a unique id
+      siteId: newSiteId,
+      SiteFlowConfigsId: newSiteId,  // Ensure partition key is set
+      config: defaultFlowConfig
+    };
+
+    // Make sure to include the partition key when creating the item
+    await client.database(databaseId).container(siteFlowConfigsContainerId).items.create(newSiteFlowConfig, { partitionKey: newSiteId });
+
+    res.status(201).json(createdSite);
   } catch (error) {
     console.error('Error creating site:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
+
+
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist', 'index.html')); // Adjust this path if necessary
+  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
 });
 
 app.listen(port, () => {

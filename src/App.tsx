@@ -1,5 +1,6 @@
+// src/App.tsx
 import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Route, Routes, useLocation, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import MainComponent from './workflows/NoParkFeeFlow/MainComponent';
 import Login from './admin/components/Login';
 import AdminDashboard from './admin/components/AdminDashboard';
@@ -54,10 +55,10 @@ const UserComponent: React.FC = () => {
   const { user } = useAuth();
   const [config, setConfig] = useState<any>(null);
 
-  const getConfig = async (workflowName: string) => {
+  const getConfig = async (siteId: string) => {
     try {
-      console.log("Fetching config for workflow:", workflowName);
-      const response = await axios.get(`/api/flows/${workflowName}`);
+      console.log("Fetching config for site:", siteId);
+      const response = await axios.get(`/api/site-config/${siteId}`);
       console.log("Config response:", response);
       setConfig(response.data);
     } catch (error) {
@@ -66,8 +67,8 @@ const UserComponent: React.FC = () => {
   };
 
   useEffect(() => {
-    if (user && user.role === 'user' && user.workflowName) {
-      getConfig(user.workflowName);
+    if (user && user.role === 'user' && user.siteId && user.workflowName) {
+      getConfig(user.siteId);
     }
   }, [user]);
 
@@ -75,7 +76,7 @@ const UserComponent: React.FC = () => {
     return <div>Loading configuration...</div>;
   }
 
-  return <MainComponent config={config} />;
+  return <MainComponent config={config} workflowName={user.workflowName} />;
 };
 
 export default App;
