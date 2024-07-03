@@ -42,6 +42,11 @@ const days = [
   { id: 3, Days: 3 },
   { id: 4, Days: 4 },
   { id: 5, Days: 5 },
+  { id: 6, Days: 6 },
+  { id: 7, Days: 7 },
+  { id: 8, Days: 8 },
+  { id: 9, Days: 9 },
+  { id: 10, Days: 10 },
 ];
 
 app.use(cors({

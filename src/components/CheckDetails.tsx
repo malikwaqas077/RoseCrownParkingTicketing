@@ -10,15 +10,18 @@ interface CheckDetailsProps {
   onContinue: () => void;
   config: any;
   flowName: string;
+  isPaying: boolean;
 }
 
-const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, config, nickname, onGoBack, onContinue, flowName }) => {
+const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, config, nickname, onGoBack, onContinue, flowName, isPaying }) => {
   const theme = config.config.checkDetailsScreen;
   const [transactionMessage, setTransactionMessage] = useState<string | null>(null);
   const [showRetry, setShowRetry] = useState<boolean>(false);
   const [paymentProcessed, setPaymentProcessed] = useState<boolean>(false);
   const [isPaymentInProgress, setIsPaymentInProgress] = useState<boolean>(false);
   const [isGoBackDisabled, setIsGoBackDisabled] = useState<boolean>(false);
+
+  console.log("user is paying:", isPaying);
 
   useEffect(() => {
     window.handlePaymentResponse = function(response: { transaction_status: string }) {
@@ -45,11 +48,6 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     setIsGoBackDisabled(true);
     window.location.href = paymentUrl;
   };
-
-  // const handleCancelTransaction = () => {
-  //   const cancelUrl = '/api/canceltransaction';
-  //   window.location.href = cancelUrl;
-  // };
 
   const handleModalClose = () => {
     window.location.href = '/';
@@ -89,7 +87,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
             <p className={`text-lg font-bold text-center`}>{transactionMessage}</p>
           </div>
         )}
-        {(flowName === 'MandatoryDonationFlow' || flowName === 'ParkFeeFlow' || (flowName === 'OptionalDonationFlow' && defaultNickname)) && !paymentProcessed && (
+        {(flowName === 'MandatoryDonationFlow' || flowName === 'ParkFeeFlow' || (flowName === 'OptionalDonationFlow' && defaultNickname && isPaying)) && !paymentProcessed && (
           <>
             <div className="flex items-center justify-center mb-6">
               <p className="text-xl font-bold text-blue-800">
@@ -112,7 +110,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
             </div>
           </>
         )}
-        {(flowName !== 'MandatoryDonationFlow' && flowName !== 'ParkFeeFlow' && (!defaultNickname || flowName !== 'OptionalDonationFlow')) && (
+        {(!isPaying || flowName === 'NoParkFeeFlow' || flowName === 'OptionalDonationFlow') && (
           <>
             <button
               onClick={onContinue}

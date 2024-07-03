@@ -1,4 +1,3 @@
-// src/workflows/NoParkFeeFlow/MainComponent.tsx
 import React, { useState } from 'react';
 import MainScreen from '../../components/MainScreen';
 import TapToStart from '../../components/TapToStart';
@@ -8,7 +7,7 @@ import GiveNickname from '../../components/GiveNickname';
 import CheckDetails from '../../components/CheckDetails';
 import Decision from '../../components/Decision';
 
-const MainComponent: React.FC<{ config: any; workflowName : any }> = ({ config, workflowName }) => {
+const MainComponent: React.FC<{ config: any; workflowName: any }> = ({ config, workflowName }) => {
   const [step, setStep] = useState(0);
   const [selectedDayOrFee, setSelectedDayOrFee] = useState<string | number | null>(null);
   const [regNumber, setRegNumber] = useState<string>('');
@@ -17,7 +16,7 @@ const MainComponent: React.FC<{ config: any; workflowName : any }> = ({ config, 
   const [isPaying, setIsPaying] = useState(false); // Add state for isPaying
 
   const flowName = workflowName; // Use the flow from the config
-  console.log("config name is :", flowName)
+  console.log("config name is :", flowName);
 
   const nextStep = () => {
     console.log("Proceeding to next step", step + 1);
@@ -32,7 +31,7 @@ const MainComponent: React.FC<{ config: any; workflowName : any }> = ({ config, 
 
   const handleDayOrFeeSelect = (dayOrFee: string | number) => {
     setSelectedDayOrFee(dayOrFee);
-    if ((flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && typeof dayOrFee === 'string') {
+    if ((flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && typeof dayOrFee === 'string' && dayOrFee.toLowerCase() !== 'no thanks - skip') {
       setIsPaying(true); // Set isPaying to true if a fee is selected
     } else {
       setIsPaying(false);
@@ -96,7 +95,7 @@ const MainComponent: React.FC<{ config: any; workflowName : any }> = ({ config, 
           onGoBack={previousStep}
         />
       )}
-      {step === 4 && (!isPaying || flowName === 'MandatoryDonationFlow') && (
+      {step === 4 && (!isPaying || flowName === 'MandatoryDonationFlow' || (flowName === 'OptionalDonationFlow' && !isPaying)) && (
         <CheckDetails
           config={config}
           regNumber={regNumber}
@@ -104,10 +103,10 @@ const MainComponent: React.FC<{ config: any; workflowName : any }> = ({ config, 
           onGoBack={handleGoBack}
           onContinue={nextStep}
           flowName={flowName}
+          isPaying={isPaying}
         />
       )}
-      {step === 5 && (flowName === 'NoParkFeeFlow' || flowName === 'MandatoryDonationFlow' ) && (
-        
+      {step === 5 && (flowName === 'NoParkFeeFlow' || flowName === 'MandatoryDonationFlow' || (flowName === 'OptionalDonationFlow' && !isPaying)) && (
         <Decision
           config={config}
           regNumber={regNumber}
@@ -115,8 +114,7 @@ const MainComponent: React.FC<{ config: any; workflowName : any }> = ({ config, 
           onFinish={handleDecisionFinish}
         />
       )}
-      
-      {step === 5 && (
+      {step === 5 && (flowName !== 'NoParkFeeFlow' && !(flowName === 'OptionalDonationFlow' && !isPaying)) && (
         <CheckDetails
           config={config}
           regNumber={regNumber}
@@ -125,9 +123,9 @@ const MainComponent: React.FC<{ config: any; workflowName : any }> = ({ config, 
           onGoBack={handleGoBack}
           onContinue={nextStep}
           flowName={flowName}
+          isPaying={isPaying}
         />
       )}
-      
       {step === 6 && (
         <Decision
           config={config}

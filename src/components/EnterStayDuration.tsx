@@ -11,10 +11,11 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   const [options, setOptions] = useState<string[] | number[]>([]);
   const [showMore, setShowMore] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | number | null>(null);
+  const apiUrl = "http://localhost:5000";
+
 
   useEffect(() => {
     let URL = '';
-    const apiUrl = import.meta.env.VITE_API_URL;
     console.log
     if (flowName === 'MandatoryDonationFlow') {
       URL = `${apiUrl}/api/parking-fee`;
@@ -44,7 +45,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   const handleMoreClick = () => setShowMore(!showMore);
 
   const handleSkipClick = () => {
-    fetch(`${import.meta.env.VITE_API_URL}/api/days`)
+    fetch(`${apiUrl}/api/days`)
       .then(response => response.json())
       .then(data => setOptions(data.map((item: { Days: number }) => item.Days)))
       .catch(error => console.error('Error fetching skip options:', error));
