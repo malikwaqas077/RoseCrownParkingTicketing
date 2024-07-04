@@ -11,8 +11,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   const [options, setOptions] = useState<string[] | number[]>([]);
   const [showMore, setShowMore] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | number | null>(null);
-  const apiUrl = "http://localhost:5000";
-
+  const apiUrl = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     let URL = '';
@@ -24,10 +23,11 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
     } else {
       URL = `${apiUrl}/api/days`;
     }
-
+    console.log("The API URL is", URL)
     fetch(URL)
       .then(response => response.json())
       .then(data => {
+        console.log("API Response is", data)
         if (flowName === 'MandatoryDonationFlow' || flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
           setOptions(data.map((item: { Fee: string }) => item.Fee));
         } else {
@@ -74,7 +74,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
       </div>
       {options.length > 7 && (
         <button
-          className={`mt-8 px-6 py-3 w-full rounded ${theme.moreButtonColor} ${theme.moreButtonTextColor}`}
+          className={`mt-8 px-6 py-3 w-1/4 rounded ${theme.moreButtonColor} ${theme.moreButtonTextColor}`}
           onClick={handleMoreClick}
         >
           {showMore ? 'LESS' : 'MORE'}
@@ -82,7 +82,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
       )}
       {flowName === 'OptionalDonationFlow' && (
         <button
-          className={`mt-8 px-6 py-3 w-full rounded bg-gray-300 text-gray-700`}
+          className={`mt-8 px-6 py-3 w-1/4 rounded bg-gray-300 text-gray-700`}
           onClick={handleSkipClick}
         >
           No Thanks - Skip
