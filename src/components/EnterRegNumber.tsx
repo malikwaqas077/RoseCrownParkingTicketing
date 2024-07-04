@@ -46,8 +46,8 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
   ];
 
   return (
-    <div className="bg-white flex items-center justify-center min-h-screen font-din">
-      <div className="relative w-full max-w-lg p-8" style={{ minHeight: '70vh' }}>
+    <div className="bg-white flex flex-col items-center justify-center min-h-screen h-screen w-screen p-0 m-0 font-din text-center">
+      <div className="relative w-full max-w-xl" style={{ minHeight: '70vh' }}>
         <h2 className={`text-2xl font-semibold mb-4 ${theme.textColor} text-center`}>{theme.title}</h2>
         <p className={`text mb-8 ${theme.textColor} text-center`}>{theme.subtitle}</p>
         <div className="mb-6">
@@ -92,6 +92,7 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
       </div>
     </div>
   );
+  
 };
 
 export default EnterRegNumber;

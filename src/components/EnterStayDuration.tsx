@@ -52,7 +52,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   };
 
   return (
-    <div className="bg-white flex flex-col items-center justify-center min-h-screen p-4 font-din text-center">
+    <div className="bg-white flex flex-col items-center justify-center min-h-screen h-screen w-screen p-0 m-0 font-din text-center">
       <h1 className="text-2xl font-bold text-green-600 mb-2 leading-snug">
         {theme.title}
       </h1>
