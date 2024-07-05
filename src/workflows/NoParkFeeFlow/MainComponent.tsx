@@ -29,15 +29,22 @@ const MainComponent: React.FC<{ config: any; workflowName: any }> = ({ config, w
     setStep(step - 1);
   };
 
-  const handleDayOrFeeSelect = (dayOrFee: string | number) => {
+  const handleDayOrFeeSelect = (dayOrFee: string | number, userIsPaying: boolean) => {
     setSelectedDayOrFee(dayOrFee);
+    
     if (flowName === 'MandatoryDonationFlow') {
-      setIsPaying(true); // Set isPaying to true if the flow is MandatoryDonationFlow
-    } else if ((flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && typeof dayOrFee === 'string' && dayOrFee.toLowerCase() !== 'no thanks - skip') {
-      setIsPaying(true); // Set isPaying to true if a fee is selected
+      setIsPaying(true); // Always set isPaying to true for MandatoryDonationFlow
+    } else if (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
+      if (typeof dayOrFee === 'string' && dayOrFee.toLowerCase() === 'no thanks - skip') {
+        setIsPaying(false);
+      } else {
+        setIsPaying(userIsPaying);
+      }
     } else {
-      setIsPaying(false);
+      setIsPaying(userIsPaying);
     }
+  
+    console.log("Selected day/fee:", dayOrFee, "User is paying:", isPaying);
     nextStep();
   };
 

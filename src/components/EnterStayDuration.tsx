@@ -1,34 +1,46 @@
 import React, { useState, useEffect } from 'react';
 
 interface EnterStayDurationProps {
-  onSelect: (daysOrFee: string | number) => void;
+  onSelect: (daysOrFee: string | number, isPaying: boolean) => void;
   config: any;
   flowName: string;
-
 }
 
-const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect, flowName  }) => {
+const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect, flowName }) => {
   const theme = config.config.enterStayDurationScreen;
   const [options, setOptions] = useState<string[] | number[]>([]);
   const [showMore, setShowMore] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | number | null>(null);
+  const [showingDays, setShowingDays] = useState(false);
+  const [isPaying, setIsPaying] = useState(false);
+
   const apiUrl = import.meta.env.VITE_API_URL;
+
+  const fetchDays = () => {
+    fetch(`${apiUrl}/api/days`)
+      .then(response => response.json())
+      .then(data => {
+        console.log("API Response for days:", data);
+        setOptions(data.map((item: { Days: number }) => item.Days));
+        setShowingDays(true);
+      })
+      .catch(error => console.error('Error fetching days:', error));
+  };
 
   useEffect(() => {
     let URL = '';
-    console.log
-    if (flowName === 'MandatoryDonationFlow') {
-      URL = `${apiUrl}/api/parking-fee`;
-    } else if (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
+    if (flowName === 'OptionalDonationFlow' || flowName === 'MandatoryDonationFlow' ) {
       URL = `${apiUrl}/api/parking-fee-without-hours`;
+    } else if ( flowName === 'ParkFeeFlow') {
+      URL = `${apiUrl}/api/parking-fee`;
     } else {
       URL = `${apiUrl}/api/days`;
     }
-    console.log("The API URL is", URL)
+    console.log("The API URL is", URL);
     fetch(URL)
       .then(response => response.json())
       .then(data => {
-        console.log("API Response is", data)
+        console.log("API Response is", data);
         if (flowName === 'MandatoryDonationFlow' || flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
           setOptions(data.map((item: { Fee: string }) => item.Fee));
         } else {
@@ -39,18 +51,21 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   }, [flowName]);
 
   const handleOptionClick = (option: string | number) => {
-    setSelectedOption(option);
-    onSelect(option);
+    if (flowName === 'OptionalDonationFlow' && !showingDays) {
+      setIsPaying(true);
+      fetchDays();
+    } else {
+      setSelectedOption(option);
+      onSelect(option, flowName === 'MandatoryDonationFlow' || (flowName === 'OptionalDonationFlow' && isPaying));
+    }
+  };
+
+  const handleSkipClick = () => {
+    setIsPaying(false);
+    fetchDays();
   };
 
   const handleMoreClick = () => setShowMore(!showMore);
-
-  const handleSkipClick = () => {
-    fetch(`${apiUrl}/api/days`)
-      .then(response => response.json())
-      .then(data => setOptions(data.map((item: { Days: number }) => item.Days)))
-      .catch(error => console.error('Error fetching skip options:', error));
-  };
 
   return (
     <div className="bg-white flex flex-col items-center justify-center min-h-screen h-screen w-screen p-0 m-0 font-din text-center">
@@ -58,15 +73,14 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
         {theme.title}
       </h1>
       <p className="text-base text-green-600 mb-8 leading-snug w-full max-w-md text-center px-4">
-        {theme.subtitle}
+        {showingDays ? "Select number of days" : theme.subtitle}
       </p>
       <div className="flex flex-col space-y-4 w-full max-w-md px-4">
         {options.slice(0, showMore ? options.length : 7).map(option => (
           <button
             key={option}
-            className={`px-6 py-3 text-lg font-semibold w-full rounded border ${theme.buttonBorderColor} ${theme.buttonTextColor} ${
-              selectedOption === option ? theme.buttonColor : 'bg-transparent'
-            }`}
+            className={`px-6 py-3 text-lg font-semibold w-full rounded border ${theme.buttonBorderColor} ${theme.buttonTextColor} ${selectedOption === option ? theme.buttonColor : 'bg-transparent'
+              }`}
             onClick={() => handleOptionClick(option)}
           >
             {typeof option === 'number' ? `${option} DAY${option > 1 ? 'S' : ''}` : option}
@@ -81,7 +95,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
           {showMore ? 'LESS' : 'MORE'}
         </button>
       )}
-      {flowName === 'OptionalDonationFlow' && (
+      {flowName === 'OptionalDonationFlow' && !showingDays && (
         <button
           className={`mt-8 px-6 py-3 w-1/2 rounded bg-gray-300 text-gray-700`}
           onClick={handleSkipClick}

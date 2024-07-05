@@ -11,29 +11,29 @@ const app = express();
 const port = process.env.PORT || 5000;
 
 const parking_fee = [
-  { id: 1, Fee: "UP TO 1 HR - £1" },
-  { id: 2, Fee: "UP TO 2 HR - £2" },
-  { id: 3, Fee: "UP TO 3 HR - £3" },
-  { id: 4, Fee: "UP TO 4 HR - £4" },
-  { id: 5, Fee: "UP TO 5 HR - £5" },
-  { id: 6, Fee: "UP TO 5 HR - £6" },
-  { id: 7, Fee: "UP TO 5 HR - £7" },
-  { id: 8, Fee: "UP TO 5 HR - £8" },
-  { id: 9, Fee: "UP TO 5 HR - £9" },
-  { id: 10, Fee: "UP TO 5 HR - £10" },
+  { id: 1, Fee: "UP TO 1 HR - £1.00" },
+  { id: 2, Fee: "UP TO 2 HR - £2.00" },
+  { id: 3, Fee: "UP TO 3 HR - £3.00" },
+  { id: 4, Fee: "UP TO 4 HR - £4.00" },
+  { id: 5, Fee: "UP TO 5 HR - £5.00" },
+  { id: 6, Fee: "UP TO 5 HR - £6.00" },
+  { id: 7, Fee: "UP TO 5 HR - £7.00" },
+  { id: 8, Fee: "UP TO 5 HR - £8.00" },
+  { id: 9, Fee: "UP TO 5 HR - £9.00" },
+  { id: 10, Fee: "UP TO 5 HR - £10.00" },
 ];
 
 const parking_fee_without_hours = [
-  { id: 1, Fee: "£1" },
-  { id: 2, Fee: "£2" },
-  { id: 3, Fee: "£3" },
-  { id: 4, Fee: "£4" },
-  { id: 5, Fee: "£5" },
-  { id: 6, Fee: "£6" },
-  { id: 7, Fee: "£7" },
-  { id: 8, Fee: "£8" },
-  { id: 9, Fee: "£9" },
-  { id: 10, Fee: "£10" },
+  { id: 1, Fee: "£1.00" },
+  { id: 2, Fee: "£2.00" },
+  { id: 3, Fee: "£3.00" },
+  { id: 4, Fee: "£4.00" },
+  { id: 5, Fee: "£5.00" },
+  { id: 6, Fee: "£6.00" },
+  { id: 7, Fee: "£7.00" },
+  { id: 8, Fee: "£8.00" },
+  { id: 9, Fee: "£9.00" },
+  { id: 10, Fee: "£10.00" },
 ];
 
 const days = [

@@ -40,7 +40,7 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
   console.log(flowName);
   console.log(theme);
 
-  const showBottomSections = flowName !== 'NoParkFeeFlow' && flowName !== 'MandatoryDonationFlow';
+  const showBottomSections = flowName !== 'NoParkFeeFlow' && flowName !== 'ParkFeeFlow';
 
   return (
     <div className="bg-white flex items-center justify-center min-h-screen h-screen w-screen p-0 m-0 font-din">
@@ -60,7 +60,7 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
         {showBottomSections && (
           <>
             <div className="text-center mb-4">
-              <p className="inline-block text-sm text-gray-700 bg-gray-200 rounded-full py-2 px-4">Powered by - Parkonomy</p>
+              <p className="inline-block text-sm text-gray-700 bg-gray-200 rounded-full  py-2 px-4">Powered by - Parkonomy</p>
             </div>
             <div className={`absolute bottom-0 left-0 right-0 text-center py-8 w-full rounded-t-3xl ${theme.backgroundColor}`}>
               <h2 className="text-xl font-bold text-white mb-4">{theme.title}</h2>
@@ -87,8 +87,8 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
           </>
         )}
         {(flowName === 'NoParkFeeFlow' || flowName === 'MandatoryDonationFlow') && (
-          <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 ${theme.poweredByBackgroundColor} rounded-full py-2 px-4`}>
-            <p className="text-sm text-gray-700">Powered by - Parkonomy</p>
+          <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 mb-16 s${theme.poweredByBackgroundColor} rounded-full py-2 px-4`}>
+            <p className="text-sm text-gray-700 ">Powered by - Parkonomy</p>
           </div>
         )}
       </div>
