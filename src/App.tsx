@@ -7,7 +7,6 @@ import AdminDashboard from './admin/components/AdminDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import axios from 'axios';
 import ProtectedRoute from './ProtectedRoute';
-import { FcWorkflow } from 'react-icons/fc';
 
 const App: React.FC = () => {
   return (

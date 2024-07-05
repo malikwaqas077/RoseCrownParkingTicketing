@@ -110,7 +110,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
             </div>
           </>
         )}
-        {(!isPaying || flowName === 'NoParkFeeFlow' || flowName === 'OptionalDonationFlow') && (
+        {((!isPaying && flowName === 'OptionalDonationFlow') || flowName === 'NoParkFeeFlow') && (
           <>
             <button
               onClick={onContinue}

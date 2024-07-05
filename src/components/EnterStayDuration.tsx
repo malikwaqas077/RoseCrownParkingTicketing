@@ -4,9 +4,10 @@ interface EnterStayDurationProps {
   onSelect: (daysOrFee: string | number) => void;
   config: any;
   flowName: string;
+
 }
 
-const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect, flowName }) => {
+const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect, flowName  }) => {
   const theme = config.config.enterStayDurationScreen;
   const [options, setOptions] = useState<string[] | number[]>([]);
   const [showMore, setShowMore] = useState(false);
@@ -74,7 +75,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
       </div>
       {options.length > 7 && (
         <button
-          className={`mt-8 px-6 py-3 w-1/4 rounded ${theme.moreButtonColor} ${theme.moreButtonTextColor}`}
+          className={`mt-8 px-6 py-3 w-1/2 rounded ${theme.moreButtonColor} ${theme.moreButtonTextColor}`}
           onClick={handleMoreClick}
         >
           {showMore ? 'LESS' : 'MORE'}
@@ -82,7 +83,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
       )}
       {flowName === 'OptionalDonationFlow' && (
         <button
-          className={`mt-8 px-6 py-3 w-1/4 rounded bg-gray-300 text-gray-700`}
+          className={`mt-8 px-6 py-3 w-1/2 rounded bg-gray-300 text-gray-700`}
           onClick={handleSkipClick}
         >
           No Thanks - Skip

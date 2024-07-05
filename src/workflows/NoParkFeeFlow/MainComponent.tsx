@@ -31,7 +31,9 @@ const MainComponent: React.FC<{ config: any; workflowName: any }> = ({ config, w
 
   const handleDayOrFeeSelect = (dayOrFee: string | number) => {
     setSelectedDayOrFee(dayOrFee);
-    if ((flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && typeof dayOrFee === 'string' && dayOrFee.toLowerCase() !== 'no thanks - skip') {
+    if (flowName === 'MandatoryDonationFlow') {
+      setIsPaying(true); // Set isPaying to true if the flow is MandatoryDonationFlow
+    } else if ((flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && typeof dayOrFee === 'string' && dayOrFee.toLowerCase() !== 'no thanks - skip') {
       setIsPaying(true); // Set isPaying to true if a fee is selected
     } else {
       setIsPaying(false);
@@ -85,10 +87,11 @@ const MainComponent: React.FC<{ config: any; workflowName: any }> = ({ config, w
           selectedDay={selectedDayOrFee}
           onContinue={handleRegNumberContinue}
           onGoBack={handleGoBack}
+          flowName={flowName}
           isPaying={isPaying} // Pass isPaying to EnterRegNumber
         />
       )}
-      {step === 4 && (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') && isPaying && (
+      {step === 4 && (flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow' || flowName === 'MandatoryDonationFlow') && isPaying && (
         <GiveNickname
           config={config}
           onContinue={handleNicknameContinue}
@@ -106,7 +109,7 @@ const MainComponent: React.FC<{ config: any; workflowName: any }> = ({ config, w
           isPaying={isPaying}
         />
       )}
-      {step === 5 && (flowName === 'NoParkFeeFlow' || flowName === 'MandatoryDonationFlow' || (flowName === 'OptionalDonationFlow' && !isPaying)) && (
+      {step === 5 && (flowName === 'NoParkFeeFlow' || (flowName === 'OptionalDonationFlow' && !isPaying)) && (
         <Decision
           config={config}
           regNumber={regNumber}

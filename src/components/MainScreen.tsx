@@ -23,14 +23,14 @@ const MainScreen: React.FC<MainScreenProps> = ({ config, onStart }) => {
           onClick={onStart}
         />
         <div
-          className="absolute inset-x-0 bottom-0 bg-white p-6 shadow-lg text-center"
+          className="absolute inset-x-0 bottom-0 bg-white p-6 shadow-lg text-center "
           style={{
             height: '35%',
             borderTopLeftRadius: '1.5rem',
             borderTopRightRadius: '1.5rem',
           }}
         >
-          <h1 className={`text-4xl font-bold mb-2 ${theme.textColor}`}>{theme.title}</h1>
+          <h1 className={`text-6xl font-bold mb-2 mt-16 ${theme.textColor}`}>{theme.title}</h1>
           <p className={`text-lg mb-2 ${theme.subtitleColor}`}>{theme.subtitle}</p>
           <p className="text-md text-gray-500 mb-4">- TAP SCREEN TO BEGIN -</p>
           <div className="text-sm text-gray-400">

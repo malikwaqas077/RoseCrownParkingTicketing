@@ -8,14 +8,20 @@ interface EnterRegNumberProps {
   onGoBack: () => void;
   isPaying: boolean;
   config:any;
+  flowName: string
+
 }
 
-const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, onContinue, onGoBack, isPaying }) => {
+const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, onContinue, onGoBack, flowName, isPaying }) => {
   const [regNumber, setRegNumber] = useState('');
   const theme = config.config.enterRegNumberScreen;
 
   useEffect(() => {
     console.log('Selected day:', selectedDay, isPaying);
+    console.log('FlowName', flowName);
+    if (flowName === "MandatoryDonationFlow"){
+      isPaying = true;
+    }
   }, [selectedDay]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
