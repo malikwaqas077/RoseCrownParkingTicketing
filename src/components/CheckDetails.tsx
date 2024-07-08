@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import ErrorModal from './ErrorModal';
 import Loader from './Loader';
 import TimeoutModal from './TimeoutModal';
+import axios from 'axios';
 
 interface CheckDetailsProps {
   regNumber: string;
@@ -44,6 +45,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
       setIsGoBackDisabled(false);
       if (response.transaction_status === 'Transaction Successful') {
         setPaymentProcessed(true);
+        updateLeaderboard();
         onContinue();
       } else {
         setShowRetry(true);
@@ -123,6 +125,29 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
 
   const handleModalReset = () => {
     window.location.href = '/';
+  };
+
+  const updateLeaderboard = async () => {
+    const amount = typeof selectedDay === 'string' ? selectedDay.match(/£(\d+)/)?.[1] || '0' : selectedDay?.toString() || '0';
+    
+    console.log('Updating leaderboard with nickname:', nickname, 'and amount:', amount);
+
+    const updatedLeaders = [
+      ...config.config.tapToStartScreen.recentLeaders,
+      { name: nickname || 'Guest', amount: `£${amount}` },
+    ].sort((a, b) => parseFloat(b.amount.substring(1)) - parseFloat(a.amount.substring(1)));
+
+    config.config.tapToStartScreen.recentLeaders = updatedLeaders.slice(0, 10);
+
+    try {
+      console.log('Sending updated config to server');
+      await axios.put(`/api/site-config/${config.siteId}`, config, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log('Leaderboard updated successfully');
+    } catch (error) {
+      console.error('Error updating leaderboard:', error);
+    }
   };
 
   const defaultNickname = nickname || 'Guest';
