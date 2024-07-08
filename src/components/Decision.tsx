@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { system_config } from '../config/config';
 import TimeoutModal from './TimeoutModal';
+import axios from 'axios';
 
 interface DecisionProps {
   regNumber: string;
@@ -69,7 +70,8 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
     setEmail((prev) => prev.slice(0, -1));
   };
 
-  const handleFinish = () => {
+  const handleFinish = async () => {
+    await updateLeaderboard();
     onFinish(email);
     window.location.href = '/';
   };
@@ -81,6 +83,28 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
 
   const handleModalReset = () => {
     window.location.href = '/';
+  };
+
+  const updateLeaderboard = async () => {
+    const nickname = config.nickname; // Assuming nickname is stored in config after donation is made
+    const amount = config.amount; // Assuming amount is stored in config after donation is made
+    if (!nickname || !amount) return;
+
+    const updatedLeaders = [
+      ...config.config.tapToStartScreen.recentLeaders,
+      { name: nickname, amount: `£${amount}` },
+    ].sort((a, b) => parseFloat(b.amount.substring(1)) - parseFloat(a.amount.substring(1)));
+
+    config.config.tapToStartScreen.recentLeaders = updatedLeaders.slice(0, 10);
+
+    try {
+      await axios.put(`/api/site-config/${config.siteId}`, config, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log('Leaderboard updated successfully');
+    } catch (error) {
+      console.error('Error updating leaderboard:', error);
+    }
   };
 
   const keys = [
