@@ -52,9 +52,10 @@ const allowedOrigins = ['http://localhost:5000', 'http://192.168.2.89:5000'];
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
       callback(null, true);
     } else {
+      console.log("Not allowed")
       callback(new Error('Not allowed by CORS'));
     }
   },
