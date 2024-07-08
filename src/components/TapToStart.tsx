@@ -1,12 +1,11 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import TimeoutModal from './TimeoutModal';  // Import the TimeoutModal component
 
-// Define the type for leader
 interface Leader {
   name: string;
   amount: string;
 }
 
-// Define the type for the theme configuration
 interface Theme {
   logo: string;
   validateParkingTextColor: string;
@@ -21,7 +20,6 @@ interface Theme {
   poweredByBackgroundColor: string;
 }
 
-// Define the type for config
 interface Config {
   config: {
     tapToStartScreen: Theme;
@@ -36,16 +34,66 @@ interface TapToStartProps {
 
 const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) => {
   const theme = (config as Config).config?.tapToStartScreen;
-
-  console.log(flowName);
-  console.log(theme);
-
   const showBottomSections = flowName !== 'NoParkFeeFlow' && flowName !== 'ParkFeeFlow';
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let countdownTimer: NodeJS.Timeout;
+
+    const resetTimeout = () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      setCountdown(30);
+      setIsModalVisible(false);
+
+      timer = setTimeout(() => {
+        setIsModalVisible(true);
+        countdownTimer = setInterval(() => {
+          setCountdown(prev => {
+            if (prev === 1) {
+              clearInterval(countdownTimer);
+              window.location.href = '/';
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, 30000);
+    };
+
+    const handleInteraction = () => {
+      resetTimeout();
+    };
+
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+
+    resetTimeout();
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+  }, []);
+
+  const handleContinue = () => {
+    setIsModalVisible(false);
+    setCountdown(30);
+  };
+
+  const handleReset = () => {
+    window.location.href = '/';
+  };
 
   return (
     <div className="bg-white flex items-center justify-center min-h-screen h-screen w-screen p-0 m-0 font-din">
       <div className="relative w-full h-full" style={{ minHeight: '70vh', minWidth: '50vh' }}>
-        <div className="text-center mt-48"> {/* Increased margin-top */}
+        <div className="text-center mt-48">
           <img src={theme.logo} alt="Parkdonate Logo" className="mb-4 w-72 h-36 mx-auto" />
           <h3 className={`font-bold ${theme.validateParkingTextColor}`}>VALIDATE YOUR PARKING!</h3>
         </div>
@@ -60,7 +108,7 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
         {showBottomSections && (
           <>
             <div className="text-center mb-4">
-              <p className="inline-block text-sm text-gray-700 bg-gray-200 rounded-full  py-2 px-4">Powered by - Parkonomy</p>
+              <p className="inline-block text-sm text-gray-700 bg-gray-200 rounded-full py-2 px-4">Powered by - Parkonomy</p>
             </div>
             <div className={`absolute bottom-0 left-0 right-0 text-center py-8 w-full rounded-t-3xl ${theme.backgroundColor}`}>
               <h2 className="text-xl font-bold text-white mb-4">{theme.title}</h2>
@@ -87,9 +135,12 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
           </>
         )}
         {(flowName === 'NoParkFeeFlow' || flowName === 'MandatoryDonationFlow') && (
-          <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 mb-16 s${theme.poweredByBackgroundColor} rounded-full py-2 px-4`}>
-            <p className="text-sm text-gray-700 ">Powered by - Parkonomy</p>
+          <div className={`absolute bottom-0 left-1/2 transform -translate-x-1/2 mb-16 ${theme.poweredByBackgroundColor} rounded-full py-2 px-4`}>
+            <p className="text-sm text-gray-700">Powered by - Parkonomy</p>
           </div>
+        )}
+        {isModalVisible && (
+          <TimeoutModal countdown={countdown} onContinue={handleContinue} onReset={handleReset} />
         )}
       </div>
     </div>

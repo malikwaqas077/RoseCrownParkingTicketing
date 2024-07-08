@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import TimeoutModal from './TimeoutModal';
 
 interface EnterStayDurationProps {
   onSelect: (daysOrFee: string | number, isPaying: boolean) => void;
@@ -13,6 +14,9 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   const [selectedOption, setSelectedOption] = useState<string | number | null>(null);
   const [showingDays, setShowingDays] = useState(false);
   const [isPaying, setIsPaying] = useState(false);
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [countdown, setCountdown] = useState(30);
 
   const apiUrl = import.meta.env.VITE_API_URL;
 
@@ -29,9 +33,9 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
 
   useEffect(() => {
     let URL = '';
-    if (flowName === 'OptionalDonationFlow' || flowName === 'MandatoryDonationFlow' ) {
+    if (flowName === 'OptionalDonationFlow' || flowName === 'MandatoryDonationFlow') {
       URL = `${apiUrl}/api/parking-fee-without-hours`;
-    } else if ( flowName === 'ParkFeeFlow') {
+    } else if (flowName === 'ParkFeeFlow') {
       URL = `${apiUrl}/api/parking-fee`;
     } else {
       URL = `${apiUrl}/api/days`;
@@ -50,6 +54,48 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
       .catch(error => console.error('Error fetching options:', error));
   }, [flowName]);
 
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let countdownTimer: NodeJS.Timeout;
+
+    const resetTimeout = () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      setCountdown(30);
+      setIsModalVisible(false);
+
+      timer = setTimeout(() => {
+        setIsModalVisible(true);
+        countdownTimer = setInterval(() => {
+          setCountdown(prev => {
+            if (prev === 1) {
+              clearInterval(countdownTimer);
+              window.location.href = '/';
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, 30000);
+    };
+
+    const handleInteraction = () => {
+      resetTimeout();
+    };
+
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+
+    resetTimeout();
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+  }, []);
+
   const handleOptionClick = (option: string | number) => {
     if (flowName === 'OptionalDonationFlow' && !showingDays) {
       setIsPaying(true);
@@ -66,6 +112,15 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   };
 
   const handleMoreClick = () => setShowMore(!showMore);
+
+  const handleContinue = () => {
+    setIsModalVisible(false);
+    setCountdown(30);
+  };
+
+  const handleReset = () => {
+    window.location.href = '/';
+  };
 
   return (
     <div className="bg-white flex flex-col items-center justify-center min-h-screen h-screen w-screen p-0 m-0 font-din text-center">
@@ -102,6 +157,9 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
         >
           No Thanks - Skip
         </button>
+      )}
+      {isModalVisible && (
+        <TimeoutModal countdown={countdown} onContinue={handleContinue} onReset={handleReset} />
       )}
     </div>
   );

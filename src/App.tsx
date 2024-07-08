@@ -9,6 +9,32 @@ import axios from 'axios';
 import ProtectedRoute from './ProtectedRoute';
 
 const App: React.FC = () => {
+  const { user } = useAuth();
+  const [config, setConfig] = useState<any>(null);
+
+  const getConfig = async (siteId: string, workflowName: string) => {
+    try {
+      console.log("Fetching config for site:", siteId, "and workflow:", workflowName);
+      const response = await axios.get(`/api/site-config/${siteId}`, {
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      console.log("Config response:", response);
+      setConfig(response.data);
+    } catch (error) {
+      console.error('Error fetching config:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user && user.role === 'user' && user.siteId && user.workflowName) {
+      getConfig(user.siteId, user.workflowName);
+    }
+  }, [user]);
+
+  // if (!config) {
+  //   return <div>Loading configuration...</div>;
+  // }
+
   return (
     <AuthProvider>
       <Router>
@@ -27,7 +53,7 @@ const App: React.FC = () => {
             path="/"
             element={
               <ProtectedRoute role="user">
-                <UserComponent />
+                <UserComponent config={config} />
               </ProtectedRoute>
             }
           />
@@ -51,32 +77,12 @@ const RouteChangeHandler: React.FC = () => {
   return null;
 };
 
-const UserComponent: React.FC = () => {
+const UserComponent: React.FC<{ config: any }> = ({ config }) => {
   const { user } = useAuth();
-  const [config, setConfig] = useState<any>(null);
 
-  const getConfig = async (siteId: string, workflowName: string) => {
-    try {
-      console.log("Fetching config for site:", siteId, "and workflow:", workflowName);
-      const response = await axios.get(`/api/site-config/${siteId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      console.log("Config response:", response);
-      setConfig(response.data);
-    } catch (error) {
-      console.error('Error fetching config:', error);
-    }
-  };
-
-  useEffect(() => {
-    if (user && user.role === 'user' && user.siteId && user.workflowName) {
-      getConfig(user.siteId, user.workflowName);
-    }
-  }, [user]);
-
-  if (!config) {
-    return <div>Loading configuration...</div>;
-  }
+  // if (!config) {
+  //   return <div>Loading configuration...</div>;
+  // }
 
   return <MainComponent config={config} workflowName={user.workflowName} />;
 };

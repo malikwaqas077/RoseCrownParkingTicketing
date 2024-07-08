@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import ErrorModal from './ErrorModal';
 import Loader from './Loader';
+import TimeoutModal from './TimeoutModal';
 
 interface CheckDetailsProps {
   regNumber: string;
@@ -13,7 +14,16 @@ interface CheckDetailsProps {
   isPaying: boolean;
 }
 
-const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, config, nickname, onGoBack, onContinue, flowName, isPaying }) => {
+const CheckDetails: React.FC<CheckDetailsProps> = ({
+  regNumber,
+  selectedDay,
+  config,
+  nickname,
+  onGoBack,
+  onContinue,
+  flowName,
+  isPaying,
+}) => {
   const theme = config.config.checkDetailsScreen;
   const [transactionMessage, setTransactionMessage] = useState<string | null>(null);
   const [showRetry, setShowRetry] = useState<boolean>(false);
@@ -21,10 +31,13 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
   const [isPaymentInProgress, setIsPaymentInProgress] = useState<boolean>(false);
   const [isGoBackDisabled, setIsGoBackDisabled] = useState<boolean>(false);
 
-  console.log("user is paying:", isPaying);
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+
+  console.log('user is paying:', isPaying);
 
   useEffect(() => {
-    window.handlePaymentResponse = function(response: { transaction_status: string }) {
+    window.handlePaymentResponse = function (response: { transaction_status: string }) {
       console.log('Payment Response:', response);
       setTransactionMessage(response.transaction_status);
       setIsPaymentInProgress(false);
@@ -38,10 +51,53 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     };
   }, [onContinue]);
 
-  const defaultNickname = nickname || 'Guest';
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let countdownTimer: NodeJS.Timeout;
+
+    const resetTimeout = () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      setCountdown(30);
+      setIsModalVisible(false);
+
+      timer = setTimeout(() => {
+        setIsModalVisible(true);
+        countdownTimer = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev === 1) {
+              clearInterval(countdownTimer);
+              window.location.href = '/';
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, 30000);
+    };
+
+    const handleInteraction = () => {
+      resetTimeout();
+    };
+
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+
+    resetTimeout();
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+  }, []);
 
   const handlePayment = () => {
-    const amount = typeof selectedDay === 'string' ? parseInt(selectedDay.match(/£(\d+)/)?.[1] || '0', 10) * 100 : selectedDay;
+    const amount =
+      typeof selectedDay === 'string'
+        ? parseInt(selectedDay.match(/£(\d+)/)?.[1] || '0', 10) * 100
+        : selectedDay;
     const clientReference = 'test_reference';
     const paymentUrl = `/api/makepayment?amount=${amount}&client_reference=${clientReference}`;
     setIsPaymentInProgress(true);
@@ -59,6 +115,17 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
     setIsGoBackDisabled(true);
     handlePayment();
   };
+
+  const handleModalContinue = () => {
+    setIsModalVisible(false);
+    setCountdown(30);
+  };
+
+  const handleModalReset = () => {
+    window.location.href = '/';
+  };
+
+  const defaultNickname = nickname || 'Guest';
 
   return (
     <div className="bg-white flex flex-col items-center justify-center min-h-screen h-screen w-screen p-0 m-0 font-din text-center">
@@ -87,29 +154,32 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
             <p className={`text-lg font-bold text-center`}>{transactionMessage}</p>
           </div>
         )}
-        {(flowName === 'MandatoryDonationFlow' || flowName === 'ParkFeeFlow' || (flowName === 'OptionalDonationFlow' && defaultNickname && isPaying)) && !paymentProcessed && (
-          <>
-            <div className="flex items-center justify-center mb-6">
-              <p className="text-xl font-bold text-blue-800">
-                {isPaymentInProgress ? "Please proceed with the payment device" : theme.paymentText}
-              </p>
-              {isPaymentInProgress ? (
-                <Loader />
-              ) : (
-                <img 
-                  src={theme.arrowIcon} 
-                  alt="Arrow" 
-                  className="ml-2 cursor-pointer" 
-                  style={{ width: '30px', height: '30px' }} 
-                  onClick={handlePayment}
-                />
-              )}
-            </div>
-            <div className="flex items-center justify-center mb-6">
-              <img src={theme.nfcIcon} alt="NFC Icon" className="w-32 h-32" />
-            </div>
-          </>
-        )}
+        {(flowName === 'MandatoryDonationFlow' ||
+          flowName === 'ParkFeeFlow' ||
+          (flowName === 'OptionalDonationFlow' && defaultNickname && isPaying)) &&
+          !paymentProcessed && (
+            <>
+              <div className="flex items-center justify-center mb-6">
+                <p className="text-xl font-bold text-blue-800">
+                  {isPaymentInProgress ? 'Please proceed with the payment device' : theme.paymentText}
+                </p>
+                {isPaymentInProgress ? (
+                  <Loader />
+                ) : (
+                  <img
+                    src={theme.arrowIcon}
+                    alt="Arrow"
+                    className="ml-2 cursor-pointer"
+                    style={{ width: '30px', height: '30px' }}
+                    onClick={handlePayment}
+                  />
+                )}
+              </div>
+              <div className="flex items-center justify-center mb-6">
+                <img src={theme.nfcIcon} alt="NFC Icon" className="w-32 h-32" />
+              </div>
+            </>
+          )}
         {((!isPaying && flowName === 'OptionalDonationFlow') || flowName === 'NoParkFeeFlow') && (
           <>
             <button
@@ -123,7 +193,9 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
         )}
         <button
           onClick={onGoBack}
-          className={`w-full font-bold py-3 bg-transparent border-2 border-red-600 text-red-600 rounded-lg hover:bg-gray-100 ${isGoBackDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          className={`w-full font-bold py-3 bg-transparent border-2 border-red-600 text-red-600 rounded-lg hover:bg-gray-100 ${
+            isGoBackDisabled ? 'opacity-50 cursor-not-allowed' : ''
+          }`}
           disabled={isGoBackDisabled}
         >
           GO BACK & EDIT DETAILS
@@ -136,6 +208,9 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({ regNumber, selectedDay, con
           onRetry={handleRetry}
           onClose={handleModalClose}
         />
+      )}
+      {isModalVisible && (
+        <TimeoutModal countdown={countdown} onContinue={handleModalContinue} onReset={handleModalReset} />
       )}
     </div>
   );

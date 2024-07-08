@@ -1,4 +1,3 @@
-// src/components/MainScreen.tsx
 import React from 'react';
 
 interface MainScreenProps {
@@ -10,7 +9,29 @@ const MainScreen: React.FC<MainScreenProps> = ({ config, onStart }) => {
   const theme = config?.config?.mainScreen;
 
   if (!theme) {
-    return <div>Loading...</div>;
+    return (
+      <div className="bg-white flex flex-col items-center justify-center h-screen w-screen font-din">
+        <div className="loader mb-4"></div>
+        <p className="text-lg text-gray-700">Loading configuration, please wait...</p>
+        <style>
+          {`
+            .loader {
+              border: 8px solid #f3f3f3;
+              border-radius: 50%;
+              border-top: 8px solid #3498db;
+              width: 60px;
+              height: 60px;
+              animation: spin 2s linear infinite;
+            }
+
+            @keyframes spin {
+              0% { transform: rotate(0deg); }
+              100% { transform: rotate(360deg); }
+            }
+          `}
+        </style>
+      </div>
+    );
   }
 
   return (
@@ -23,7 +44,7 @@ const MainScreen: React.FC<MainScreenProps> = ({ config, onStart }) => {
           onClick={onStart}
         />
         <div
-          className="absolute inset-x-0 bottom-0 bg-white p-6 shadow-lg text-center "
+          className="absolute inset-x-0 bottom-0 bg-white p-6 shadow-lg text-center"
           style={{
             height: '35%',
             borderTopLeftRadius: '1.5rem',

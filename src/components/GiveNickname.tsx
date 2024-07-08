@@ -1,17 +1,60 @@
-// src/components/GiveNickname.tsx
-import React, { useState } from 'react';
-// import { themes } from '../config/themes';
+import React, { useState, useEffect } from 'react';
+import TimeoutModal from './TimeoutModal';
 
 interface GiveNicknameProps {
-  // flow: keyof typeof themes;
   onContinue: (nickname: string) => void;
   onGoBack: () => void;
-  config:any;
+  config: any;
 }
 
 const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBack }) => {
   const [nickname, setNickname] = useState('');
   const theme = config.config.enterNickNameScreen;
+
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    let countdownTimer: NodeJS.Timeout;
+
+    const resetTimeout = () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      setCountdown(30);
+      setIsModalVisible(false);
+
+      timer = setTimeout(() => {
+        setIsModalVisible(true);
+        countdownTimer = setInterval(() => {
+          setCountdown(prev => {
+            if (prev === 1) {
+              clearInterval(countdownTimer);
+              window.location.href = '/';
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, 30000);
+    };
+
+    const handleInteraction = () => {
+      resetTimeout();
+    };
+
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+
+    resetTimeout();
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNickname(e.target.value);
@@ -31,6 +74,15 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
     } else {
       alert('Please enter a nickname');
     }
+  };
+
+  const handleModalContinue = () => {
+    setIsModalVisible(false);
+    setCountdown(30);
+  };
+
+  const handleModalReset = () => {
+    window.location.href = '/';
   };
 
   const keys = [
@@ -85,6 +137,9 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
           GO BACK & EDIT DETAILS
         </button>
       </div>
+      {isModalVisible && (
+        <TimeoutModal countdown={countdown} onContinue={handleModalContinue} onReset={handleModalReset} />
+      )}
     </div>
   );
 };

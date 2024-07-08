@@ -1,28 +1,69 @@
 import React, { useState, useEffect } from 'react';
-// import { themes } from '../config/themes';
+import TimeoutModal from './TimeoutModal';
 
 interface EnterRegNumberProps {
   selectedDay: number | string | null;
-  // flow: keyof typeof themes;
   onContinue: (regNumber: string) => void;
   onGoBack: () => void;
   isPaying: boolean;
-  config:any;
-  flowName: string
-
+  config: any;
+  flowName: string;
 }
 
 const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, onContinue, onGoBack, flowName, isPaying }) => {
   const [regNumber, setRegNumber] = useState('');
   const theme = config.config.enterRegNumberScreen;
 
+  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+
   useEffect(() => {
     console.log('Selected day:', selectedDay, isPaying);
     console.log('FlowName', flowName);
-    if (flowName === "MandatoryDonationFlow"){
+    if (flowName === 'MandatoryDonationFlow') {
       isPaying = true;
     }
-  }, [selectedDay]);
+
+    let timer: NodeJS.Timeout;
+    let countdownTimer: NodeJS.Timeout;
+
+    const resetTimeout = () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      setCountdown(30);
+      setIsModalVisible(false);
+
+      timer = setTimeout(() => {
+        setIsModalVisible(true);
+        countdownTimer = setInterval(() => {
+          setCountdown(prev => {
+            if (prev === 1) {
+              clearInterval(countdownTimer);
+              window.location.href = '/';
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, 30000);
+    };
+
+    const handleInteraction = () => {
+      resetTimeout();
+    };
+
+    window.addEventListener('click', handleInteraction);
+    window.addEventListener('keydown', handleInteraction);
+
+    resetTimeout();
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      window.removeEventListener('click', handleInteraction);
+      window.removeEventListener('keydown', handleInteraction);
+    };
+  }, [selectedDay, flowName]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRegNumber(e.target.value.toUpperCase());
@@ -42,6 +83,15 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
     } else {
       alert('Please enter a registration number');
     }
+  };
+
+  const handleModalContinue = () => {
+    setIsModalVisible(false);
+    setCountdown(30);
+  };
+
+  const handleModalReset = () => {
+    window.location.href = '/';
   };
 
   const keys = [
@@ -96,9 +146,11 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
           GO BACK & EDIT DETAILS
         </button>
       </div>
+      {isModalVisible && (
+        <TimeoutModal countdown={countdown} onContinue={handleModalContinue} onReset={handleModalReset} />
+      )}
     </div>
   );
-  
 };
 
 export default EnterRegNumber;
