@@ -48,9 +48,16 @@ const days = [
   { id: 9, Days: 9 },
   { id: 10, Days: 10 },
 ];
+const allowedOrigins = ['http://localhost:5000', 'http://192.168.2.89:5000'];
 
 app.use(cors({
-  origin: 'http://localhost:5000', // Allow only this origin to access the resources
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   methods: ['GET', 'POST', 'PUT', 'DELETE'], // Allow these HTTP methods
   allowedHeaders: ['Content-Type', 'Authorization'], // Allow these headers
 }));

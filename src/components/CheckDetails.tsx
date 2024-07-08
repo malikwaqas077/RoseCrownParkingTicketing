@@ -57,12 +57,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
     let timer: NodeJS.Timeout;
     let countdownTimer: NodeJS.Timeout;
 
-    const resetTimeout = () => {
-      clearTimeout(timer);
-      clearTimeout(countdownTimer);
-      setCountdown(30);
-      setIsModalVisible(false);
-
+    const startTimeout = (duration: number) => {
       timer = setTimeout(() => {
         setIsModalVisible(true);
         countdownTimer = setInterval(() => {
@@ -75,7 +70,24 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
             return prev - 1;
           });
         }, 1000);
-      }, 30000);
+      }, duration);
+    };
+
+    const resetTimeout = () => {
+      clearTimeout(timer);
+      clearTimeout(countdownTimer);
+      setCountdown(30);
+      setIsModalVisible(false);
+
+      // Scenario 1: Check if flow is NoParkFeeFlow or OptionalDonationFlow with isPaying true
+      if (flowName === 'NoParkFeeFlow' || (flowName === 'OptionalDonationFlow' && isPaying)) {
+        startTimeout(30000);
+      } else {
+        // Scenario 2: User is on the CheckDetails page without interaction for 30 seconds
+        if (!isPaymentInProgress && !showRetry) {
+          startTimeout(30000);
+        }
+      }
     };
 
     const handleInteraction = () => {
@@ -93,7 +105,33 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
       window.removeEventListener('click', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
     };
-  }, []);
+  }, [flowName, isPaying, isPaymentInProgress, showRetry]);
+
+  useEffect(() => {
+    // Scenario 3: If ErrorModal is shown for 30 seconds without interaction
+    if (showRetry) {
+      let errorModalTimer: NodeJS.Timeout;
+      let countdownTimer: NodeJS.Timeout;
+      errorModalTimer = setTimeout(() => {
+        setIsModalVisible(true);
+        countdownTimer = setInterval(() => {
+          setCountdown((prev) => {
+            if (prev === 1) {
+              clearInterval(countdownTimer);
+              window.location.href = '/';
+              return 0;
+            }
+            return prev - 1;
+          });
+        }, 1000);
+      }, 30000);
+
+      return () => {
+        clearTimeout(errorModalTimer);
+        clearTimeout(countdownTimer);
+      };
+    }
+  }, [showRetry]);
 
   const handlePayment = () => {
     const amount =
@@ -242,3 +280,4 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
 };
 
 export default CheckDetails;
+
