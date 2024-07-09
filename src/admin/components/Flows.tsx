@@ -94,9 +94,9 @@ const Flows: React.FC<FlowsProps> = ({ flow, siteId, isEditing }) => {
     }
   };
 
-  if (!config) {
-    return <div>Loading...</div>;
-  }
+  // if (!config) {
+  //   return <div>Loading...</div>;
+  // }
 
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-auto p-8 h-full">

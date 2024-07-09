@@ -1,6 +1,5 @@
-// src/context/AuthContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode, FC } from 'react';
-import axios from '../utils/axiosConfig'; // Use the configured Axios instance
+import  { createContext, useContext, useState, useEffect, ReactNode, FC } from 'react';
+import axios from '../utils/axiosConfig';
 
 interface AuthContextType {
   user: any;

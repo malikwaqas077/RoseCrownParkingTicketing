@@ -1,22 +1,18 @@
-// src/admin/components/Login.tsx
 import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { FaEnvelope, FaLock, FaSignInAlt } from 'react-icons/fa';
-import axios from '../../utils/axiosConfig'; // Use the configured Axios instance
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { setAuthData } = useAuth();
+  const { handleLogin } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const response = await axios.post('/api/login', { email, password });
-      const { token, user } = response.data;
-      setAuthData({ token, user });
+      const user = await handleLogin(email, password);
       console.log(`User role: ${user.role}`);
       if (user.role === 'admin') {
         navigate('/admin');

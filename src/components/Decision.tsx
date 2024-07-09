@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { system_config } from '../config/config';
 import TimeoutModal from './TimeoutModal';
 import axios from 'axios';
 
