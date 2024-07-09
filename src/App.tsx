@@ -49,7 +49,7 @@ const RouteChangeHandler: React.FC = () => {
       document.body.classList.remove('admin');
     }
     appInsights.trackPageView({ name: location.pathname });
-    appInsights.trackEvent({ name: 'PageView', properties: { path: location.pathname } });
+    console.log(`Page view tracked: ${location.pathname}`);
   }, [location, appInsights]);
 
   return null;
@@ -100,27 +100,21 @@ const UserComponent: React.FC = () => {
     const getConfig = async () => {
       if (user && user.role === 'user' && user.siteId && user.workflowName) {
         try {
-          console.log("Fetching config for site:", user.siteId, "and workflow:", user.workflowName);
-          appInsights.trackEvent({ name: 'ConfigFetchStart', properties: { siteId: user.siteId, workflowName: user.workflowName } });
+          appInsights.trackTrace({ message: `Fetching config for site: ${user.siteId} and workflow: ${user.workflowName}` });
+          console.log(`Fetching config for site: ${user.siteId} and workflow: ${user.workflowName}`);
 
           const response = await axios.get(`/api/site-config/${user.siteId}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
-
+          appInsights.trackTrace({ message: `Config response: ${JSON.stringify(response.data)}` });
           console.log("Config response:", response);
+
           setConfig(response.data);
-          appInsights.trackEvent({ name: 'ConfigFetchSuccess', properties: { siteId: user.siteId, workflowName: user.workflowName } });
-        } catch (error) {
-          console.error('Error fetching config:', error);
-          appInsights.trackException({ exception: error as Error });
-          appInsights.trackEvent({
-            name: 'ConfigFetchError',
-            properties: {
-              siteId: user.siteId,
-              workflowName: user.workflowName,
-              error: (error as Error).message,
-            },
-          });
+        } catch (error: unknown) {
+          if (error instanceof Error) {
+            appInsights.trackException({ exception: error });
+            console.error('Error fetching config:', error);
+          }
         } finally {
           setLoading(false);
         }
