@@ -1,4 +1,5 @@
-import React from 'react';
+import React, { useEffect } from 'react';
+import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
 interface MainScreenProps {
   config: any;
@@ -6,7 +7,12 @@ interface MainScreenProps {
 }
 
 const MainScreen: React.FC<MainScreenProps> = ({ config, onStart }) => {
+  const appInsights = useAppInsightsContext();
   const theme = config?.config?.mainScreen;
+
+  useEffect(() => {
+    appInsights.trackPageView({ name: 'MainScreen' });
+  }, [appInsights]);
 
   if (!theme) {
     return (
@@ -37,7 +43,10 @@ const MainScreen: React.FC<MainScreenProps> = ({ config, onStart }) => {
   return (
     <div 
       className="bg-white flex items-center justify-center h-screen w-screen font-din cursor-pointer"
-      onClick={onStart}
+      onClick={() => {
+        appInsights.trackEvent({ name: 'MainScreen_Tap' });
+        onStart();
+      }}
     >
       <div className="relative w-full h-full">
         <img

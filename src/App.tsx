@@ -1,3 +1,4 @@
+// src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import MainComponent from './workflows/NoParkFeeFlow/MainComponent';
@@ -6,6 +7,7 @@ import AdminDashboard from './admin/components/AdminDashboard';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import axios from 'axios';
 import ProtectedRoute from './ProtectedRoute';
+import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
 const App: React.FC = () => {
   return (
@@ -38,6 +40,7 @@ const App: React.FC = () => {
 
 const RouteChangeHandler: React.FC = () => {
   const location = useLocation();
+  const appInsights = useAppInsightsContext();
 
   React.useEffect(() => {
     if (location.pathname.startsWith('/admin')) {
@@ -45,7 +48,9 @@ const RouteChangeHandler: React.FC = () => {
     } else {
       document.body.classList.remove('admin');
     }
-  }, [location]);
+    appInsights.trackPageView({ name: location.pathname });
+    appInsights.trackEvent({ name: 'PageView', properties: { path: location.pathname } });
+  }, [location, appInsights]);
 
   return null;
 };
@@ -89,19 +94,33 @@ const UserComponent: React.FC = () => {
   const { user } = useAuth();
   const [config, setConfig] = React.useState<any>(null);
   const [loading, setLoading] = React.useState(true);
+  const appInsights = useAppInsightsContext();
 
   React.useEffect(() => {
     const getConfig = async () => {
       if (user && user.role === 'user' && user.siteId && user.workflowName) {
         try {
           console.log("Fetching config for site:", user.siteId, "and workflow:", user.workflowName);
+          appInsights.trackEvent({ name: 'ConfigFetchStart', properties: { siteId: user.siteId, workflowName: user.workflowName } });
+
           const response = await axios.get(`/api/site-config/${user.siteId}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
           });
+
           console.log("Config response:", response);
           setConfig(response.data);
+          appInsights.trackEvent({ name: 'ConfigFetchSuccess', properties: { siteId: user.siteId, workflowName: user.workflowName } });
         } catch (error) {
           console.error('Error fetching config:', error);
+          appInsights.trackException({ exception: error as Error });
+          appInsights.trackEvent({
+            name: 'ConfigFetchError',
+            properties: {
+              siteId: user.siteId,
+              workflowName: user.workflowName,
+              error: (error as Error).message,
+            },
+          });
         } finally {
           setLoading(false);
         }
@@ -111,7 +130,7 @@ const UserComponent: React.FC = () => {
     };
 
     getConfig();
-  }, [user]);
+  }, [user, appInsights]);
 
   if (loading) {
     return <LoadingComponent />;

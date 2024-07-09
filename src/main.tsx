@@ -1,14 +1,18 @@
-// src/index.tsx
+// src/main.tsx
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import App from './App';
 import './index.css';
 import { AuthProvider } from './context/AuthContext';
+import { AppInsightsContext } from '@microsoft/applicationinsights-react-js';
+import { appInsights, reactPlugin } from './utils/appInsights';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <AuthProvider>
-      <App />
-    </AuthProvider>
+    <AppInsightsContext.Provider value={reactPlugin}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </AppInsightsContext.Provider>
   </React.StrictMode>,
 );
