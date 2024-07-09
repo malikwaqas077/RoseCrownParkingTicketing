@@ -3,6 +3,7 @@ import ErrorModal from './ErrorModal';
 import Loader from './Loader';
 import TimeoutModal from './TimeoutModal';
 import axios from 'axios';
+import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
 interface CheckDetailsProps {
   regNumber: string;
@@ -25,6 +26,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
   flowName,
   isPaying,
 }) => {
+  const appInsights = useAppInsightsContext();
   const theme = config.config.checkDetailsScreen;
   const [transactionMessage, setTransactionMessage] = useState<string | null>(null);
   const [showRetry, setShowRetry] = useState<boolean>(false);
@@ -35,10 +37,11 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
 
-  console.log('user is paying:', isPaying);
+  appInsights.trackTrace({ message: 'CheckDetails component rendered', properties: { regNumber, selectedDay, nickname, flowName, isPaying } });
 
   useEffect(() => {
     window.handlePaymentResponse = function (response: { transaction_status: string }) {
+      appInsights.trackTrace({ message: 'Payment response received', properties: { response } });
       console.log('Payment Response:', response);
       setTransactionMessage(response.transaction_status);
       setIsPaymentInProgress(false);
@@ -60,11 +63,16 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
     const startTimeout = (duration: number) => {
       timer = setTimeout(() => {
         setIsModalVisible(true);
+        appInsights.trackEvent({ name: 'TimeoutModalShown' });
+        appInsights.trackTrace({ message: 'Timeout modal shown' });
+
         countdownTimer = setInterval(() => {
           setCountdown((prev) => {
             if (prev === 1) {
               clearInterval(countdownTimer);
               window.location.href = '/';
+              appInsights.trackEvent({ name: 'TimeoutExpired' });
+              appInsights.trackTrace({ message: 'Timeout expired, redirecting to home' });
               return 0;
             }
             return prev - 1;
@@ -79,6 +87,9 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
       setCountdown(30);
       setIsModalVisible(false);
 
+      appInsights.trackEvent({ name: 'TimeoutReset' });
+      appInsights.trackTrace({ message: 'Timeout reset and countdown started' });
+
       // Scenario 1: Check if flow is NoParkFeeFlow or OptionalDonationFlow with isPaying true
       if (flowName === 'NoParkFeeFlow' || (flowName === 'OptionalDonationFlow' && isPaying)) {
         startTimeout(30000);
@@ -91,6 +102,8 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
     };
 
     const handleInteraction = () => {
+      appInsights.trackEvent({ name: 'UserInteraction' });
+      appInsights.trackTrace({ message: 'User interaction detected, resetting timeout' });
       resetTimeout();
     };
 
@@ -104,8 +117,10 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
       clearTimeout(countdownTimer);
       window.removeEventListener('click', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
+
+      appInsights.trackTrace({ message: 'CheckDetails component unmounted' });
     };
-  }, [flowName, isPaying, isPaymentInProgress, showRetry]);
+  }, [flowName, isPaying, isPaymentInProgress, showRetry, appInsights]);
 
   useEffect(() => {
     // Scenario 3: If ErrorModal is shown for 30 seconds without interaction
@@ -114,11 +129,16 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
       let countdownTimer: NodeJS.Timeout;
       errorModalTimer = setTimeout(() => {
         setIsModalVisible(true);
+        appInsights.trackEvent({ name: 'ErrorModalShown' });
+        appInsights.trackTrace({ message: 'Error modal shown' });
+
         countdownTimer = setInterval(() => {
           setCountdown((prev) => {
             if (prev === 1) {
               clearInterval(countdownTimer);
               window.location.href = '/';
+              appInsights.trackEvent({ name: 'TimeoutExpired' });
+              appInsights.trackTrace({ message: 'Timeout expired, redirecting to home' });
               return 0;
             }
             return prev - 1;
@@ -131,7 +151,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
         clearTimeout(countdownTimer);
       };
     }
-  }, [showRetry]);
+  }, [showRetry, appInsights]);
 
   const handlePayment = () => {
     const amount =
@@ -140,16 +160,24 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
         : selectedDay;
     const clientReference = 'test_reference';
     const paymentUrl = `/api/makepayment?amount=${amount}&client_reference=${clientReference}`;
+    appInsights.trackEvent({ name: 'InitiatePayment', properties: { amount, clientReference, paymentUrl } });
+    appInsights.trackTrace({ message: 'Initiating payment', properties: { amount, clientReference, paymentUrl } });
+
     setIsPaymentInProgress(true);
     setIsGoBackDisabled(true);
     window.location.href = paymentUrl;
   };
 
   const handleModalClose = () => {
+    appInsights.trackEvent({ name: 'CloseModal' });
+    appInsights.trackTrace({ message: 'User closed the modal, redirecting to home' });
     window.location.href = '/';
   };
 
   const handleRetry = () => {
+    appInsights.trackEvent({ name: 'RetryPayment' });
+    appInsights.trackTrace({ message: 'User chose to retry payment' });
+
     setShowRetry(false);
     setIsPaymentInProgress(true);
     setIsGoBackDisabled(true);
@@ -157,17 +185,23 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
   };
 
   const handleModalContinue = () => {
+    appInsights.trackEvent({ name: 'ContinueFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User continued from timeout modal, resetting countdown' });
     setIsModalVisible(false);
     setCountdown(30);
   };
 
   const handleModalReset = () => {
+    appInsights.trackEvent({ name: 'ResetFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User chose to reset from timeout modal, redirecting to home' });
     window.location.href = '/';
   };
 
   const updateLeaderboard = async () => {
     const amount = typeof selectedDay === 'string' ? selectedDay.match(/£(\d+)/)?.[1] || '0' : selectedDay?.toString() || '0';
-    
+    appInsights.trackEvent({ name: 'UpdateLeaderboard', properties: { nickname, amount } });
+    appInsights.trackTrace({ message: 'Updating leaderboard', properties: { nickname, amount } });
+
     console.log('Updating leaderboard with nickname:', nickname, 'and amount:', amount);
 
     const updatedLeaders = [
@@ -182,8 +216,14 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
       await axios.put(`/api/site-config/${config.siteId}`, config, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      appInsights.trackTrace({ message: 'Leaderboard updated successfully' });
       console.log('Leaderboard updated successfully');
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        appInsights.trackException({ exception: error });
+      } else {
+        appInsights.trackException({ exception: new Error('Unknown error occurred during leaderboard update') });
+      }
       console.error('Error updating leaderboard:', error);
     }
   };
@@ -280,4 +320,3 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
 };
 
 export default CheckDetails;
-
