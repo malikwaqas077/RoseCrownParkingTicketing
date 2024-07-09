@@ -48,7 +48,7 @@ const days = [
   { id: 9, Days: 9 },
   { id: 10, Days: 10 },
 ];
-const allowedOrigins = ['http://localhost:5000', 'http://192.168.2.89:5000'];
+const allowedOrigins = ['http://localhost:5000', 'http://192.168.2.89:5000', 'https://parkingticketingwebapp.azurewebsites.net'];
 
 app.use(cors({
   origin: function (origin, callback) {
