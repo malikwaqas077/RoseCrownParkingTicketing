@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TimeoutModal from './TimeoutModal';
+import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
 interface EnterRegNumberProps {
   selectedDay: number | string | null;
@@ -11,6 +12,7 @@ interface EnterRegNumberProps {
 }
 
 const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, onContinue, onGoBack, flowName, isPaying }) => {
+  const appInsights = useAppInsightsContext();
   const [regNumber, setRegNumber] = useState('');
   const theme = config.config.enterRegNumberScreen;
 
@@ -18,8 +20,8 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
   const [countdown, setCountdown] = useState(30);
 
   useEffect(() => {
-    console.log('Selected day:', selectedDay, isPaying);
-    console.log('FlowName', flowName);
+    appInsights.trackTrace({ message: 'EnterRegNumber component mounted', properties: { selectedDay, isPaying, flowName } });
+
     if (flowName === 'MandatoryDonationFlow') {
       isPaying = true;
     }
@@ -33,13 +35,21 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
       setCountdown(30);
       setIsModalVisible(false);
 
+      appInsights.trackEvent({ name: 'TimeoutReset' });
+      appInsights.trackTrace({ message: 'Timeout reset and countdown started' });
+
       timer = setTimeout(() => {
         setIsModalVisible(true);
+        appInsights.trackEvent({ name: 'TimeoutModalShown' });
+        appInsights.trackTrace({ message: 'Timeout modal shown' });
+
         countdownTimer = setInterval(() => {
           setCountdown(prev => {
             if (prev === 1) {
               clearInterval(countdownTimer);
               window.location.href = '/';
+              appInsights.trackEvent({ name: 'TimeoutExpired' });
+              appInsights.trackTrace({ message: 'Timeout expired, redirecting to home' });
               return 0;
             }
             return prev - 1;
@@ -49,6 +59,8 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
     };
 
     const handleInteraction = () => {
+      appInsights.trackEvent({ name: 'UserInteraction' });
+      appInsights.trackTrace({ message: 'User interaction detected, resetting timeout' });
       resetTimeout();
     };
 
@@ -62,35 +74,48 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
       clearTimeout(countdownTimer);
       window.removeEventListener('click', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
+
+      appInsights.trackTrace({ message: 'EnterRegNumber component unmounted' });
     };
-  }, [selectedDay, flowName]);
+  }, [selectedDay, flowName, appInsights]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setRegNumber(e.target.value.toUpperCase());
+    appInsights.trackTrace({ message: 'Registration number input changed', properties: { regNumber: e.target.value.toUpperCase() } });
   };
 
   const handleKeyPress = (key: string) => {
     setRegNumber((prev) => (prev + key).toUpperCase());
+    appInsights.trackEvent({ name: 'KeyPress', properties: { key, regNumber: (regNumber + key).toUpperCase() } });
   };
 
   const handleDelete = () => {
     setRegNumber((prev) => prev.slice(0, -1));
+    appInsights.trackEvent({ name: 'KeyDelete', properties: { regNumber: regNumber.slice(0, -1) } });
   };
 
   const handleContinue = () => {
     if (regNumber) {
+      appInsights.trackEvent({ name: 'ContinueWithRegNumber', properties: { regNumber } });
+      appInsights.trackTrace({ message: 'User clicked continue with registration number', properties: { regNumber } });
       onContinue(regNumber);
     } else {
+      appInsights.trackEvent({ name: 'ContinueWithoutRegNumber' });
+      appInsights.trackTrace({ message: 'User attempted to continue without entering registration number' });
       alert('Please enter a registration number');
     }
   };
 
   const handleModalContinue = () => {
+    appInsights.trackEvent({ name: 'ContinueFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User continued from timeout modal, resetting countdown' });
     setIsModalVisible(false);
     setCountdown(30);
   };
 
   const handleModalReset = () => {
+    appInsights.trackEvent({ name: 'ResetFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User chose to reset from timeout modal, redirecting to home' });
     window.location.href = '/';
   };
 
@@ -140,7 +165,11 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
         </button>
         <p className={`text-lg font-bold mb-4 ${theme.inputTextColor} text-center`}>OR</p>
         <button
-          onClick={onGoBack}
+          onClick={() => {
+            appInsights.trackEvent({ name: 'GoBack' });
+            appInsights.trackTrace({ message: 'User chose to go back and edit details' });
+            onGoBack();
+          }}
           className={`w-full py-3 font-semibold bg-transparent border-2 ${theme.inputBorderColor} ${theme.goBackButotntextColor} rounded-lg ${theme.backButtonHoverColor}`}
         >
           GO BACK & EDIT DETAILS

@@ -84,7 +84,7 @@ const sitesContainerId = process.env.COSMOS_DB_SITES_CONTAINER_ID;
 const flowsContainerId = process.env.COSMOS_DB_FLOWS_CONTAINER_ID;
 const siteFlowConfigsContainerId = process.env.COSMOS_DB_SITE_FLOW_CONFIGS_CONTAINER_ID;
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h';
+// const JWT_EXPIRATION = process.env.JWT_EXPIRATION || '1h';
 
 const client = new CosmosClient({ endpoint, key });
 
@@ -127,7 +127,7 @@ app.post('/api/login', async (req, res) => {
       if (isPasswordValid) {
         console.log("password is valid")
         // Generate JWT
-        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, siteId: user.siteId, workflowName: user.workflowName }, JWT_SECRET, { expiresIn: JWT_EXPIRATION });
+        const token = jwt.sign({ id: user.id, email: user.email, role: user.role, siteId: user.siteId, workflowName: user.workflowName }, JWT_SECRET);
         console.log(token, user)
         res.json({ message: 'Login successful', token, user });
       } else {

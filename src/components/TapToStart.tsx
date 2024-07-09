@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import TimeoutModal from './TimeoutModal';  // Import the TimeoutModal component
+import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
 interface Leader {
   name: string;
@@ -33,6 +34,7 @@ interface TapToStartProps {
 }
 
 const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) => {
+  const appInsights = useAppInsightsContext();
   const theme = (config as Config).config?.tapToStartScreen;
   const showBottomSections = flowName !== 'NoParkFeeFlow' && flowName !== 'ParkFeeFlow';
 
@@ -40,6 +42,8 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
   const [countdown, setCountdown] = useState(30);
 
   useEffect(() => {
+    appInsights.trackTrace({ message: 'TapToStart component mounted' });
+
     let timer: NodeJS.Timeout;
     let countdownTimer: NodeJS.Timeout;
 
@@ -49,13 +53,21 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
       setCountdown(30);
       setIsModalVisible(false);
 
+      appInsights.trackEvent({ name: 'TimeoutReset' });
+      appInsights.trackTrace({ message: 'Timeout reset and countdown started' });
+
       timer = setTimeout(() => {
         setIsModalVisible(true);
+        appInsights.trackEvent({ name: 'TimeoutModalShown' });
+        appInsights.trackTrace({ message: 'Timeout modal shown' });
+
         countdownTimer = setInterval(() => {
           setCountdown(prev => {
             if (prev === 1) {
               clearInterval(countdownTimer);
               window.location.href = '/';
+              appInsights.trackEvent({ name: 'TimeoutExpired' });
+              appInsights.trackTrace({ message: 'Timeout expired, redirecting to home' });
               return 0;
             }
             return prev - 1;
@@ -65,6 +77,8 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
     };
 
     const handleInteraction = () => {
+      appInsights.trackEvent({ name: 'UserInteraction' });
+      appInsights.trackTrace({ message: 'User interaction detected, resetting timeout' });
       resetTimeout();
     };
 
@@ -78,15 +92,21 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
       clearTimeout(countdownTimer);
       window.removeEventListener('click', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
+
+      appInsights.trackTrace({ message: 'TapToStart component unmounted' });
     };
-  }, []);
+  }, [appInsights]);
 
   const handleContinue = () => {
+    appInsights.trackEvent({ name: 'ContinueFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User continued from timeout modal, resetting countdown' });
     setIsModalVisible(false);
     setCountdown(30);
   };
 
   const handleReset = () => {
+    appInsights.trackEvent({ name: 'ResetFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User chose to reset from timeout modal, redirecting to home' });
     window.location.href = '/';
   };
 
@@ -100,7 +120,11 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
         <div className="text-center mb-12">
           <button
             className={`mt-16 px-16 py-3 rounded ${theme.buttonColor} ${theme.buttonTextColor} text-lg font-semibold w-3/4`}
-            onClick={onStart}
+            onClick={() => {
+              appInsights.trackEvent({ name: 'TapToStartButtonClicked' });
+              appInsights.trackTrace({ message: 'User clicked TAP TO START button' });
+              onStart();
+            }}
           >
             TAP TO START
           </button>

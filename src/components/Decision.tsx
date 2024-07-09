@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TimeoutModal from './TimeoutModal';
 import axios from 'axios';
+import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
 interface DecisionProps {
   regNumber: string;
@@ -10,10 +11,13 @@ interface DecisionProps {
 }
 
 const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, onFinish }) => {
+  const appInsights = useAppInsightsContext();
   const [email, setEmail] = useState('');
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
   const theme = config.config.decisionScreen;
+
+  appInsights.trackTrace({ message: 'Decision component rendered', properties: { regNumber, parkingEndTime } });
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -25,13 +29,21 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
       setCountdown(30);
       setIsModalVisible(false);
 
+      appInsights.trackEvent({ name: 'TimeoutReset' });
+      appInsights.trackTrace({ message: 'Timeout reset and countdown started' });
+
       timer = setTimeout(() => {
         setIsModalVisible(true);
+        appInsights.trackEvent({ name: 'TimeoutModalShown' });
+        appInsights.trackTrace({ message: 'Timeout modal shown' });
+
         countdownTimer = setInterval(() => {
           setCountdown((prev) => {
             if (prev === 1) {
               clearInterval(countdownTimer);
               window.location.href = '/';
+              appInsights.trackEvent({ name: 'TimeoutExpired' });
+              appInsights.trackTrace({ message: 'Timeout expired, redirecting to home' });
               return 0;
             }
             return prev - 1;
@@ -41,6 +53,8 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
     };
 
     const handleInteraction = () => {
+      appInsights.trackEvent({ name: 'UserInteraction' });
+      appInsights.trackTrace({ message: 'User interaction detected, resetting timeout' });
       resetTimeout();
     };
 
@@ -54,33 +68,44 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
       clearTimeout(countdownTimer);
       window.removeEventListener('click', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
+
+      appInsights.trackTrace({ message: 'Decision component unmounted' });
     };
-  }, []);
+  }, [appInsights]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
+    appInsights.trackTrace({ message: 'Email input changed', properties: { email: e.target.value } });
   };
 
   const handleKeyPress = (key: string) => {
     setEmail((prev) => prev + key);
+    appInsights.trackEvent({ name: 'KeyPress', properties: { key, email: email + key } });
   };
 
   const handleDelete = () => {
     setEmail((prev) => prev.slice(0, -1));
+    appInsights.trackEvent({ name: 'KeyDelete', properties: { email: email.slice(0, -1) } });
   };
 
   const handleFinish = async () => {
     await updateLeaderboard();
+    appInsights.trackEvent({ name: 'Finish', properties: { email } });
+    appInsights.trackTrace({ message: 'User clicked finish', properties: { email } });
     onFinish(email);
     window.location.href = '/';
   };
 
   const handleModalContinue = () => {
+    appInsights.trackEvent({ name: 'ContinueFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User continued from timeout modal, resetting countdown' });
     setIsModalVisible(false);
     setCountdown(30);
   };
 
   const handleModalReset = () => {
+    appInsights.trackEvent({ name: 'ResetFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User chose to reset from timeout modal, redirecting to home' });
     window.location.href = '/';
   };
 
@@ -88,6 +113,9 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
     const nickname = config.nickname; // Assuming nickname is stored in config after donation is made
     const amount = config.amount; // Assuming amount is stored in config after donation is made
     if (!nickname || !amount) return;
+
+    appInsights.trackEvent({ name: 'UpdateLeaderboard', properties: { nickname, amount } });
+    appInsights.trackTrace({ message: 'Updating leaderboard', properties: { nickname, amount } });
 
     const updatedLeaders = [
       ...config.config.tapToStartScreen.recentLeaders,
@@ -100,8 +128,14 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
       await axios.put(`/api/site-config/${config.siteId}`, config, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      appInsights.trackTrace({ message: 'Leaderboard updated successfully' });
       console.log('Leaderboard updated successfully');
-    } catch (error) {
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        appInsights.trackException({ exception: error });
+      } else {
+        appInsights.trackException({ exception: new Error('Unknown error occurred during leaderboard update') });
+      }
       console.error('Error updating leaderboard:', error);
     }
   };
@@ -110,7 +144,7 @@ const Decision: React.FC<DecisionProps> = ({ regNumber, parkingEndTime, config, 
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '0',
     'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P',
     'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', '-',
-    'Z', 'X', 'C', 'V', 'B', 'N', 'M', '@', '.','_'
+    'Z', 'X', 'C', 'V', 'B', 'N', 'M', '@', '.', '_'
   ];
 
   return (

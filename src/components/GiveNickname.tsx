@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import TimeoutModal from './TimeoutModal';
+import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
 interface GiveNicknameProps {
   onContinue: (nickname: string) => void;
@@ -8,6 +9,7 @@ interface GiveNicknameProps {
 }
 
 const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBack }) => {
+  const appInsights = useAppInsightsContext();
   const [nickname, setNickname] = useState('');
   const theme = config.config.enterNickNameScreen;
 
@@ -15,6 +17,8 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
   const [countdown, setCountdown] = useState(30);
 
   useEffect(() => {
+    appInsights.trackTrace({ message: 'GiveNickname component mounted' });
+
     let timer: NodeJS.Timeout;
     let countdownTimer: NodeJS.Timeout;
 
@@ -24,13 +28,21 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
       setCountdown(30);
       setIsModalVisible(false);
 
+      appInsights.trackEvent({ name: 'TimeoutReset' });
+      appInsights.trackTrace({ message: 'Timeout reset and countdown started' });
+
       timer = setTimeout(() => {
         setIsModalVisible(true);
+        appInsights.trackEvent({ name: 'TimeoutModalShown' });
+        appInsights.trackTrace({ message: 'Timeout modal shown' });
+
         countdownTimer = setInterval(() => {
           setCountdown(prev => {
             if (prev === 1) {
               clearInterval(countdownTimer);
               window.location.href = '/';
+              appInsights.trackEvent({ name: 'TimeoutExpired' });
+              appInsights.trackTrace({ message: 'Timeout expired, redirecting to home' });
               return 0;
             }
             return prev - 1;
@@ -40,6 +52,8 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
     };
 
     const handleInteraction = () => {
+      appInsights.trackEvent({ name: 'UserInteraction' });
+      appInsights.trackTrace({ message: 'User interaction detected, resetting timeout' });
       resetTimeout();
     };
 
@@ -53,35 +67,48 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
       clearTimeout(countdownTimer);
       window.removeEventListener('click', handleInteraction);
       window.removeEventListener('keydown', handleInteraction);
+
+      appInsights.trackTrace({ message: 'GiveNickname component unmounted' });
     };
-  }, []);
+  }, [appInsights]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setNickname(e.target.value);
+    appInsights.trackTrace({ message: 'Nickname input changed', properties: { nickname: e.target.value } });
   };
 
   const handleKeyPress = (key: string) => {
     setNickname((prev) => prev + key);
+    appInsights.trackEvent({ name: 'KeyPress', properties: { key, nickname: nickname + key } });
   };
 
   const handleDelete = () => {
     setNickname((prev) => prev.slice(0, -1));
+    appInsights.trackEvent({ name: 'KeyDelete', properties: { nickname: nickname.slice(0, -1) } });
   };
 
   const handleContinue = () => {
     if (nickname) {
+      appInsights.trackEvent({ name: 'ContinueWithNickname', properties: { nickname } });
+      appInsights.trackTrace({ message: 'User clicked continue with nickname', properties: { nickname } });
       onContinue(nickname);
     } else {
+      appInsights.trackEvent({ name: 'ContinueWithoutNickname' });
+      appInsights.trackTrace({ message: 'User attempted to continue without entering nickname' });
       alert('Please enter a nickname');
     }
   };
 
   const handleModalContinue = () => {
+    appInsights.trackEvent({ name: 'ContinueFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User continued from timeout modal, resetting countdown' });
     setIsModalVisible(false);
     setCountdown(30);
   };
 
   const handleModalReset = () => {
+    appInsights.trackEvent({ name: 'ResetFromTimeoutModal' });
+    appInsights.trackTrace({ message: 'User chose to reset from timeout modal, redirecting to home' });
     window.location.href = '/';
   };
 
@@ -131,7 +158,11 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
         </button>
         <p className={`text-lg font-bold mb-4 ${theme.inputTextColor} text-center`}>OR</p>
         <button
-          onClick={onGoBack}
+          onClick={() => {
+            appInsights.trackEvent({ name: 'GoBack' });
+            appInsights.trackTrace({ message: 'User chose to go back and edit details' });
+            onGoBack();
+          }}
           className={`w-full py-3 font-semibold bg-transparent border-2 ${theme.inputBorderColor} ${theme.goBackButotntextColor} rounded-lg ${theme.backButtonHoverColor}`}
         >
           GO BACK & EDIT DETAILS
