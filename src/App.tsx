@@ -1,4 +1,3 @@
-// src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes, useLocation } from 'react-router-dom';
 import MainComponent from './workflows/NoParkFeeFlow/MainComponent';
@@ -101,7 +100,7 @@ const UserComponent: React.FC = () => {
       if (user && user.role === 'user' && user.siteId && user.workflowName) {
         try {
           appInsights.trackTrace({ message: `Fetching config for site: ${user.siteId} and workflow: ${user.workflowName}` });
-          console.log(`Fetching config for site: ${user.siteId} and workflow: ${user.workflowName}`);
+          console.log(`Fetching config for site: ${user.siteId} and workflow: ${user.workflowName} and ip address is ${user.alioIpAddress}`);
 
           const response = await axios.get(`/api/site-config/${user.siteId}`, {
             headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
@@ -110,6 +109,7 @@ const UserComponent: React.FC = () => {
           console.log("Config response:", response);
 
           setConfig(response.data);
+          sendIpPortToMaui(user.alioIpAddress, user.alioPortNo);
         } catch (error: unknown) {
           if (error instanceof Error) {
             appInsights.trackException({ exception: error });
@@ -126,6 +126,14 @@ const UserComponent: React.FC = () => {
     getConfig();
   }, [user, appInsights]);
 
+  const sendIpPortToMaui = (ipAddress: string, port: string) => {
+    console.log(`Sending IP: ${ipAddress}, Port: ${port} to MAUI`);
+    if ((window as any).AndroidInterface) {
+      // Android
+      (window as any).AndroidInterface.receiveIpPort(ipAddress, port);
+    }
+  };
+
   if (loading) {
     return <LoadingComponent />;
   }
@@ -138,3 +146,5 @@ const UserComponent: React.FC = () => {
 };
 
 export default App;
+
+

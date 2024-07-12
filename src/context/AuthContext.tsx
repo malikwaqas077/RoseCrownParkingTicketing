@@ -20,9 +20,7 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
   useEffect(() => {
     const initializeAuth = async () => {
       const token = localStorage.getItem('token');
-      console.log("this is token", token)
       if (token) {
-        console.log("token exists")
         try {
           const response = await axios.get('/api/protected');
           setUser(response.data.user);
@@ -37,6 +35,27 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     initializeAuth();
   }, []);
 
+  const fetchExternalToken = async () => {
+    try {
+      const response = await axios.post('https://e850837e-0018-401b-9f24-fb730bd5a456.mock.pstmn.io/oauth/token', {
+        grant_type: 'client_credentials',
+        client_secret: 'secret_token',
+        client_id: 'id',
+        provider: 'staff',
+      }, {
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+      });
+
+      const { access_token } = response.data;
+      console.log("External toke is", access_token);
+      localStorage.setItem('external_token', access_token);
+    } catch (error) {
+      console.error('Error fetching external token:', error);
+    }
+  };
+
   const setAuthData = (data: { token: string; user: any }) => {
     localStorage.setItem('token', data.token);
     setUser(data.user);
@@ -47,11 +66,16 @@ export const AuthProvider: FC<{ children: ReactNode }> = ({ children }) => {
     const response = await axios.post('/api/login', { email, password });
     const { token, user } = response.data;
     setAuthData({ token, user });
+    
+    // Fetch external token after successful login
+    await fetchExternalToken();
+
     return user;
   };
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('external_token');
     setUser(null);
     setIsAuthenticated(false);
   };

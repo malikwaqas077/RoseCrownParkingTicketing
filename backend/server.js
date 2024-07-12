@@ -161,6 +161,33 @@ app.put('/api/site-config/:siteId', authenticateToken, async (req, res) => {
       ]
     };
 
+
+app.get('/api/site-ip-port/:siteId', async (req, res) => {
+  const { siteId } = req.params;
+
+  const querySpec = {
+    query: "SELECT c.alioIpAddress, c.alioPortNo FROM c WHERE c.siteId = @siteId",
+    parameters: [{ name: "@siteId", value: siteId }]
+  };
+
+  try {
+    const { resources: items } = await client.database(databaseId).container(sitesContainerId).items.query(querySpec).fetchAll();
+
+    if (items.length > 0) {
+      res.json({ ip: items[0].alioIpAddress, port: items[0].alioPortNo });
+    } else {
+      res.status(404).json({ error: "Site not found" });
+    }
+  } catch (error) {
+    console.error('Error fetching site IP and port:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+    
+    
+
+
+    
     const { resources: items } = await client.database(databaseId).container(siteFlowConfigsContainerId).items.query(querySpec).fetchAll();
     if (items.length > 0) {
       const existingConfig = items[0];
@@ -332,17 +359,19 @@ app.put('/api/flows/:flowId', authenticateToken, async (req, res) => {
 });
 
 app.post('/api/sites', authenticateToken, async (req, res) => {
-  const { siteName, address, contactNumber, email, password, workflowName } = req.body;
-  const newSiteId = `site${Date.now()}`;
+  const { siteId, siteName, address, contactNumber, email, password, workflowName, alioIpAddress, alioPortNo, role } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);  // Hash password
   const newSite = {
-    siteId: newSiteId,
+    siteId,
     siteName,
     address,
     contactNumber,
     email,
     password: hashedPassword,  // Store hashed password
-    workflowName
+    workflowName,
+    alioIpAddress,
+    alioPortNo,
+    role
   };
 
   try {
@@ -366,14 +395,14 @@ app.post('/api/sites', authenticateToken, async (req, res) => {
 
     // Create the site-specific flow configuration
     const newSiteFlowConfig = {
-      id: `${newSiteId}-${Date.now()}`,  // Add a unique id
-      siteId: newSiteId,
-      SiteFlowConfigsId: newSiteId,  // Ensure partition key is set
+      id: `${siteId}-${Date.now()}`,  // Add a unique id
+      siteId: siteId,
+      SiteFlowConfigsId: siteId,  // Ensure partition key is set
       config: defaultFlowConfig
     };
 
     // Make sure to include the partition key when creating the item
-    await client.database(databaseId).container(siteFlowConfigsContainerId).items.create(newSiteFlowConfig, { partitionKey: newSiteId });
+    await client.database(databaseId).container(siteFlowConfigsContainerId).items.create(newSiteFlowConfig, { partitionKey: siteId });
 
     res.status(201).json(createdSite);
   } catch (error) {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import TimeoutModal from './TimeoutModal';  // Import the TimeoutModal component
 import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
+import axios from 'axios';
 
 interface Leader {
   name: string;
@@ -16,7 +17,6 @@ interface Theme {
   title: string;
   Macmillanlogo: string;
   subtitle: string;
-  recentLeaders: Leader[];
   recentLeadersBackgroundColor: string;
   poweredByBackgroundColor: string;
 }
@@ -37,12 +37,40 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
   const appInsights = useAppInsightsContext();
   const theme = (config as Config).config?.tapToStartScreen;
   const showBottomSections = flowName !== 'NoParkFeeFlow' && flowName !== 'ParkFeeFlow';
+  const apiUrl = import.meta.env.VITE_API_URL;
+  const api = import.meta.env.NEXT_PUBLIC_API_BASE_URL;
+  console.log("API Number is:", apiUrl+api)
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
+  const [recentLeaders, setRecentLeaders] = useState<Leader[]>([]);
 
   useEffect(() => {
     appInsights.trackTrace({ message: 'TapToStart component mounted' });
+    const API_KEY = import.meta.env.NEXT_PUBLIC_API_KEY;
+    console.log(API_KEY)
+    const fetchRecentLeaders = async () => {
+      try {
+        const token = localStorage.getItem('external_token');
+        const response = await axios.get('https://e850837e-0018-401b-9f24-fb730bd5a456.mock.pstmn.io/carpark/id/VnrOSuFhnql/top-donates', {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const leadersData = Object.entries(response.data['top-donates']).map(([name, amount]) => ({
+          name,
+          amount: amount as string, // Explicitly cast amount to string
+        }));
+        
+        setRecentLeaders(leadersData);
+      } catch (error) {
+        console.error('Error fetching recent leaders:', error);
+        appInsights.trackException({ exception: error as Error });
+      }
+    };
+
+    fetchRecentLeaders();
 
     let timer: NodeJS.Timeout;
     let countdownTimer: NodeJS.Timeout;
@@ -143,7 +171,7 @@ const TapToStart: React.FC<TapToStartProps> = ({ config, onStart, flowName }) =>
                 <h3 className="text-gray-700 font-semibold text-lg mb-0 flex-shrink-0" style={{ minWidth: '150px' }}>Recent Leaders:</h3>
                 <div className="relative w-full overflow-hidden ml-4">
                   <div className="flex animate-scroll space-x-4 whitespace-nowrap">
-                    {theme.recentLeaders.map((leader: Leader, index: number) => (
+                    {recentLeaders.map((leader: Leader, index: number) => (
                       <span key={index} className="bg-white rounded-full px-4 py-1 text-sm font-semibold text-gray-700">
                         {leader.name} - {leader.amount}
                       </span>

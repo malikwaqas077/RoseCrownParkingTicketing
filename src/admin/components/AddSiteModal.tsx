@@ -1,38 +1,78 @@
-// src/admin/components/AddSiteModal.tsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 interface AddSiteModalProps {
-  flows: any[];
+  initialFlows: any[];
 }
 
-const AddSiteModal: React.FC<AddSiteModalProps> = ({ flows }) => {
+const AddSiteModal: React.FC<AddSiteModalProps> = ({ initialFlows }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const [siteId, setSiteId] = useState('');
   const [siteName, setSiteName] = useState('');
   const [address, setAddress] = useState('');
   const [contactNumber, setContactNumber] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [workflowName, setWorkflowName] = useState('');
+  const [alioIpAddress, setAlioIpAddress] = useState('');
+  const [alioPortNo, setAlioPortNo] = useState('');
+  const [role, setRole] = useState('user');
+  const [flows, setFlows] = useState<any[]>(initialFlows || []);
   const [message, setMessage] = useState('');
+  const [isFieldsEnabled, setIsFieldsEnabled] = useState(false);
+
+  useEffect(() => {
+    const fetchCarparkInfo = async (siteId: string) => {
+      try {
+        const response = await axios.get(`https://e850837e-0018-401b-9f24-fb730bd5a456.mock.pstmn.io/carpark/id/${siteId}?flow=voluntary_payment&whitelist=true`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
+        });
+        const data = response.data;
+        setAddress(`${data.street}, ${data.city}, ${data.postcode}`);
+        setSiteName(`${data.client.name} `);
+        const enabledFlows = [];
+        if (data.kiosk_settings.standard_payment.enabled) enabledFlows.push("ParkFeeFlow");
+        if (data.kiosk_settings.voluntary_payment_not_whitelist.enabled) enabledFlows.push("OptionalDonationFlow");
+        if (data.kiosk_settings.voluntary_payment_whitelist.enabled) enabledFlows.push("MandatoryDonationFlow");
+        if (data.kiosk_settings.free_parking.enabled) enabledFlows.push("NoParkFeeFlow");
+        setFlows(enabledFlows.map((flowName, index) => ({ id: index.toString(), name: flowName })));
+        setIsFieldsEnabled(true);
+        setMessage('Site ID verified successfully!');
+      } catch (error) {
+        console.error('Error fetching carpark info:', error);
+        setMessage('Error: Site ID is not correct.');
+      }
+    };
+
+    if (siteId) {
+      fetchCarparkInfo(siteId);
+    }
+  }, [siteId]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    console.log("the post data is", siteId, siteName, address, contactNumber, email, password, workflowName, alioIpAddress, alioPortNo, role);
     e.preventDefault();
     try {
       const response = await axios.post('/api/sites', {
-        siteName, address, contactNumber, email, password, workflowName
+        siteId, siteName, address, contactNumber, email, password, workflowName, alioIpAddress, alioPortNo, role
       }, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
       });
-      console.log(response)
+      console.log("the post data is", siteId, siteName, address, contactNumber, email, password, workflowName, alioIpAddress, alioPortNo, role);
+      console.log(response);
       setMessage('Site added successfully!');
       // Reset form fields
+      setSiteId('');
       setSiteName('');
       setAddress('');
       setContactNumber('');
       setEmail('');
       setPassword('');
       setWorkflowName('');
+      setAlioIpAddress('');
+      setAlioPortNo('');
+      setRole('user');
+      setIsFieldsEnabled(false);
       setIsOpen(false);
     } catch (error) {
       console.error('Error adding site:', error);
@@ -55,21 +95,11 @@ const AddSiteModal: React.FC<AddSiteModalProps> = ({ flows }) => {
             <h2 className="text-2xl font-bold mb-4">Add New Site</h2>
             <form onSubmit={handleSubmit}>
               <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">Site Name</label>
+                <label className="block text-gray-700 text-sm font-bold mb-2">Site ID</label>
                 <input
                   type="text"
-                  value={siteName}
-                  onChange={(e) => setSiteName(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="block text-gray-700 text-sm font-bold mb-2">Address</label>
-                <input
-                  type="text"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
+                  value={siteId}
+                  onChange={(e) => setSiteId(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
                 />
@@ -82,6 +112,7 @@ const AddSiteModal: React.FC<AddSiteModalProps> = ({ flows }) => {
                   onChange={(e) => setContactNumber(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
+                  disabled={!isFieldsEnabled}
                 />
               </div>
               <div className="mb-4">
@@ -92,6 +123,7 @@ const AddSiteModal: React.FC<AddSiteModalProps> = ({ flows }) => {
                   onChange={(e) => setEmail(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
+                  disabled={!isFieldsEnabled}
                 />
               </div>
               <div className="mb-4">
@@ -102,7 +134,43 @@ const AddSiteModal: React.FC<AddSiteModalProps> = ({ flows }) => {
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
+                  disabled={!isFieldsEnabled}
                 />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Alio IP Address</label>
+                <input
+                  type="text"
+                  value={alioIpAddress}
+                  onChange={(e) => setAlioIpAddress(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={!isFieldsEnabled}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Alio Port Number</label>
+                <input
+                  type="text"
+                  value={alioPortNo}
+                  onChange={(e) => setAlioPortNo(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={!isFieldsEnabled}
+                />
+              </div>
+              <div className="mb-4">
+                <label className="block text-gray-700 text-sm font-bold mb-2">Role</label>
+                <select
+                  value={role}
+                  onChange={(e) => setRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  required
+                  disabled={!isFieldsEnabled}
+                >
+                  <option value="user">User</option>
+                  <option value="admin">Admin</option>
+                </select>
               </div>
               <div className="mb-4">
                 <label className="block text-gray-700 text-sm font-bold mb-2">Workflow</label>
@@ -111,10 +179,11 @@ const AddSiteModal: React.FC<AddSiteModalProps> = ({ flows }) => {
                   onChange={(e) => setWorkflowName(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                   required
+                  disabled={!isFieldsEnabled}
                 >
                   <option value="">Select Workflow</option>
-                  {flows.map((flow) => (
-                    <option key={flow.id} value={flow.workflowName}>{flow.workflowName}</option>
+                  {flows && flows.map((flow) => (
+                    <option key={flow.id} value={flow.name}>{flow.name}</option>
                   ))}
                 </select>
               </div>
@@ -129,6 +198,7 @@ const AddSiteModal: React.FC<AddSiteModalProps> = ({ flows }) => {
                 <button
                   type="submit"
                   className="bg-blue-500 text-white px-4 py-2 rounded-full hover:bg-blue-600 transition duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={!isFieldsEnabled}
                 >
                   Add Site
                 </button>
@@ -141,5 +211,7 @@ const AddSiteModal: React.FC<AddSiteModalProps> = ({ flows }) => {
     </div>
   );
 };
+
+// VnrOSuFhnql
 
 export default AddSiteModal;

@@ -20,10 +20,10 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
 
-  const apiUrl = import.meta.env.VITE_API_URL;
+  const apiUrl = "https://e850837e-0018-401b-9f24-fb730bd5a456.mock.pstmn.io";
 
   const fetchDays = () => {
-    fetch(`${apiUrl}/api/days`)
+    fetch(`http://192.168.2.89:5000/api/days`)
       .then(response => response.json())
       .then(data => {
         appInsights.trackTrace({ message: "Fetched days from API", properties: { data } });
@@ -39,20 +39,31 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   useEffect(() => {
     let URL = '';
     if (flowName === 'OptionalDonationFlow' || flowName === 'MandatoryDonationFlow') {
-      URL = `${apiUrl}/api/parking-fee-without-hours`;
+      URL = `${apiUrl}/carpark/id/VnrOSuFhnql/get-donate-list`;
     } else if (flowName === 'ParkFeeFlow') {
-      URL = `${apiUrl}/api/parking-fee`;
+      URL = `${apiUrl}/carpark/id/VnrOSuFhnql/tariffs/2024-05-18T13:23:10/0`;
     } else {
-      URL = `${apiUrl}/api/days`;
+      URL = `http://localhost:5000/api/days`;
     }
     appInsights.trackTrace({ message: "API URL set", properties: { URL, flowName } });
     
-    fetch(URL)
+    fetch(URL, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem('external_token')}`,
+      },
+    })
       .then(response => response.json())
       .then(data => {
         appInsights.trackTrace({ message: "Fetched options from API", properties: { data } });
-        if (flowName === 'MandatoryDonationFlow' || flowName === 'OptionalDonationFlow' || flowName === 'ParkFeeFlow') {
-          setOptions(data.map((item: { Fee: string }) => item.Fee));
+        if (flowName === 'MandatoryDonationFlow' || flowName === 'OptionalDonationFlow') {
+          setOptions(data.donate_options_list.map((item: string) => `£${item}`));
+        } else if (flowName === 'ParkFeeFlow') {
+          const ranges = data.tariffs.ranges[0].range_options;
+          const optionsArray = Object.keys(ranges).map(key => {
+            const option = ranges[key];
+            return `${option.label.toUpperCase()} - £${option.price}`;
+          });
+          setOptions(optionsArray);
         } else {
           setOptions(data.map((item: { Days: number }) => item.Days));
         }
