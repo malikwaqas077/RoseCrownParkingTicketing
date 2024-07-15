@@ -3,7 +3,7 @@ name: Build and deploy Node.js app to Azure Web App - parkingticketingwebapp
 on:
   push:
     branches:
-      - Features
+      - dynamicAlioIP
   workflow_dispatch:
 
 jobs:
