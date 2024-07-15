@@ -10,11 +10,12 @@ interface EnterRegNumberProps {
   config: any;
   flowName: string;
 }
-
+//nickname long press problem solved
 const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, onContinue, onGoBack, flowName, isPaying }) => {
   const appInsights = useAppInsightsContext();
   const [regNumber, setRegNumber] = useState('');
   const theme = config.config.enterRegNumberScreen;
+  console.log(selectedDay)
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
