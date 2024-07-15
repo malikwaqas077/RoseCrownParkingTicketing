@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TimeoutModal from './TimeoutModal';
 import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
@@ -15,6 +15,7 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
+  const recentlyPressedRef = useRef(false);
 
   useEffect(() => {
     appInsights.trackTrace({ message: 'GiveNickname component mounted' });
@@ -78,13 +79,27 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
   };
 
   const handleKeyPress = (key: string) => {
+    if (recentlyPressedRef.current) return;
+
     setNickname((prev) => prev + key);
     appInsights.trackEvent({ name: 'KeyPress', properties: { key, nickname: nickname + key } });
+
+    recentlyPressedRef.current = true;
+    setTimeout(() => {
+      recentlyPressedRef.current = false;
+    }, 200); // Allow 200ms delay between key presses
   };
 
   const handleDelete = () => {
+    if (recentlyPressedRef.current) return;
+
     setNickname((prev) => prev.slice(0, -1));
     appInsights.trackEvent({ name: 'KeyDelete', properties: { nickname: nickname.slice(0, -1) } });
+
+    recentlyPressedRef.current = true;
+    setTimeout(() => {
+      recentlyPressedRef.current = false;
+    }, 200); // Allow 200ms delay between key presses
   };
 
   const handleContinue = () => {
@@ -129,7 +144,7 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
             type="text"
             value={nickname}
             onChange={handleInputChange}
-            className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center`}
+            className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center pointer-events-none select-none`}
             placeholder="Enter Nickname"
           />
         </div>
@@ -137,6 +152,8 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
           {keys.map((key) => (
             <button
               key={key}
+              onMouseDown={() => handleKeyPress(key)}
+              onTouchStart={() => handleKeyPress(key)}
               onClick={() => handleKeyPress(key)}
               className="w-12 h-12 text-gray-600 text-xl border rounded-lg bg-white hover:bg-gray-200"
             >
@@ -144,6 +161,8 @@ const GiveNickname: React.FC<GiveNicknameProps> = ({ config, onContinue, onGoBac
             </button>
           ))}
           <button
+            onMouseDown={handleDelete}
+            onTouchStart={handleDelete}
             onClick={handleDelete}
             className="w-12 h-12 text-xl border text-gray-600 rounded-lg bg-white hover:bg-gray-200 col-span-2"
           >

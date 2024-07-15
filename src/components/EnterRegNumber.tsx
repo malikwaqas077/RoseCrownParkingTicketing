@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import TimeoutModal from './TimeoutModal';
 import { useAppInsightsContext } from '@microsoft/applicationinsights-react-js';
 
@@ -18,6 +18,7 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
+  const recentlyPressedRef = useRef(false);
 
   useEffect(() => {
     appInsights.trackTrace({ message: 'EnterRegNumber component mounted', properties: { selectedDay, isPaying, flowName } });
@@ -85,13 +86,27 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
   };
 
   const handleKeyPress = (key: string) => {
+    if (recentlyPressedRef.current) return;
+
     setRegNumber((prev) => (prev + key).toUpperCase());
     appInsights.trackEvent({ name: 'KeyPress', properties: { key, regNumber: (regNumber + key).toUpperCase() } });
+
+    recentlyPressedRef.current = true;
+    setTimeout(() => {
+      recentlyPressedRef.current = false;
+    }, 200); // Allow 200ms delay between key presses
   };
 
   const handleDelete = () => {
+    if (recentlyPressedRef.current) return;
+
     setRegNumber((prev) => prev.slice(0, -1));
     appInsights.trackEvent({ name: 'KeyDelete', properties: { regNumber: regNumber.slice(0, -1) } });
+
+    recentlyPressedRef.current = true;
+    setTimeout(() => {
+      recentlyPressedRef.current = false;
+    }, 200); // Allow 200ms delay between key presses
   };
 
   const handleContinue = () => {
@@ -136,7 +151,7 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
             type="text"
             value={regNumber}
             onChange={handleInputChange}
-            className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center`}
+            className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center pointer-events-none select-none`}
             placeholder="Enter Registration Number"
           />
         </div>
@@ -144,6 +159,8 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
           {keys.map((key) => (
             <button
               key={key}
+              onMouseDown={() => handleKeyPress(key)}
+              onTouchStart={() => handleKeyPress(key)}
               onClick={() => handleKeyPress(key)}
               className="w-12 h-12 text-gray-600 text-xl border rounded-lg bg-white hover:bg-gray-200"
             >
@@ -151,6 +168,8 @@ const EnterRegNumber: React.FC<EnterRegNumberProps> = ({ selectedDay, config, on
             </button>
           ))}
           <button
+            onMouseDown={handleDelete}
+            onTouchStart={handleDelete}
             onClick={handleDelete}
             className="w-12 h-12 text-xl border text-gray-600 rounded-lg bg-white hover:bg-gray-200 col-span-2"
           >

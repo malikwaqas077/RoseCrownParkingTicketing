@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import hexToTailwind, { tailwindToHex } from './../../utils/tailwindColorConverter';
 
 interface FlowsProps {
   flow: any;
@@ -48,23 +49,46 @@ const Flows: React.FC<FlowsProps> = ({ flow, siteId, isEditing }) => {
         );
       }
 
+      const isTextColor = /^text-/.test(value);
+      const isBgColor = /^bg-/.test(value);
+
       return (
         <div key={fullKey} className="mb-4">
           <label className="block text-sm font-medium text-gray-700">{key}</label>
-          <input
-            type="text"
-            name={fullKey}
-            value={value}
-            onChange={(e) => handleInputChange(e, fullKey)}
-            className="mt-1 p-2 w-full border rounded"
-          />
+          {(isTextColor || isBgColor) ? (
+            <input
+              type="color"
+              name={fullKey}
+              value={tailwindToHex(value)}
+              onChange={(e) => handleColorChange(e, fullKey, isTextColor)}
+              className="mt-1 p-2 w-full border rounded"
+            />
+          ) : (
+            <input
+              type="text"
+              name={fullKey}
+              value={value}
+              onChange={(e) => handleInputChange(e, fullKey)}
+              className="mt-1 p-2 w-full border rounded"
+            />
+          )}
         </div>
       );
     });
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>, key: string) => {
+  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>, key: string, isText: boolean) => {
     const { value } = e.target;
+    const tailwindColor = hexToTailwind(value, isText);
+    updateConfig(key, tailwindColor);
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>, key: string) => {
+    const { value } = e.target;
+    updateConfig(key, value);
+  };
+
+  const updateConfig = (key: string, value: any) => {
     const keys = key.split('.');
     const newConfig = { ...config };
 
@@ -94,15 +118,11 @@ const Flows: React.FC<FlowsProps> = ({ flow, siteId, isEditing }) => {
     }
   };
 
-  // if (!config) {
-  //   return <div>Loading...</div>;
-  // }
-
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-auto p-8 h-full">
       <h2 className="text-2xl font-bold mb-8">{flow.workflowName}</h2>
       <form className="grid grid-cols-2 gap-4">
-        {renderFormFields(config)}
+        {config && renderFormFields(config)}
         <div className="col-span-2">
           <button
             type="button"

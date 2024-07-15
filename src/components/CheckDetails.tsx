@@ -36,7 +36,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
 
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [countdown, setCountdown] = useState(30);
-
+  console.log("CheckDetails component rendered", regNumber, selectedDay, nickname, flowName, isPaying)
   appInsights.trackTrace({ message: 'CheckDetails component rendered', properties: { regNumber, selectedDay, nickname, flowName, isPaying } });
 
   useEffect(() => {
@@ -188,7 +188,7 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
     appInsights.trackEvent({ name: 'ContinueFromTimeoutModal' });
     appInsights.trackTrace({ message: 'User continued from timeout modal, resetting countdown' });
     setIsModalVisible(false);
-    setCountdown(30);
+    setCountdown(120);
   };
 
   const handleModalReset = () => {
@@ -240,16 +240,16 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
             type="text"
             value={regNumber}
             readOnly
-            className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center`}
+            className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center pointer-events-none select-none`}
             placeholder={theme.inputPlaceholder}
           />
         </div>
         <div className="mb-6">
           <input
             type="text"
-            value={flowName === 'NoParkFeeFlow' ? `${selectedDay ?? ''} DAYS` : selectedDay ?? ''}
+            value={(flowName === 'NoParkFeeFlow' || flowName === 'OptionalDonationFlow')  ? `${selectedDay ?? ''} DAYS` : selectedDay ?? ''}
             readOnly
-            className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputDaysBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center`}
+            className={`w-full px-4 py-3 text-3xl font-bold ${theme.inputDaysBackgroundColor} ${theme.inputTextColor} ${theme.inputBorderColor} rounded-lg focus:outline-none text-center pointer-events-none select-none`}
           />
         </div>
         {transactionMessage && (
@@ -272,8 +272,8 @@ const CheckDetails: React.FC<CheckDetailsProps> = ({
                   <img
                     src={theme.arrowIcon}
                     alt="Arrow"
-                    className="ml-2 cursor-pointer"
-                    style={{ width: '30px', height: '30px' }}
+                    className="ml-3 mt-7 cursor-pointer"
+                    style={{ width: '60px', height: '60px' }}
                     onClick={handlePayment}
                   />
                 )}

@@ -43,7 +43,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
     } else if (flowName === 'ParkFeeFlow') {
       URL = `${apiUrl}/carpark/id/VnrOSuFhnql/tariffs/2024-05-18T13:23:10/0`;
     } else {
-      URL = `http://localhost:5000/api/days`;
+      URL = `http://192.168.2.89:5000/api/days`;
     }
     appInsights.trackTrace({ message: "API URL set", properties: { URL, flowName } });
     
@@ -66,6 +66,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
           setOptions(optionsArray);
         } else {
           setOptions(data.map((item: { Days: number }) => item.Days));
+          setShowingDays(true);
         }
       })
       .catch(error => {
@@ -169,13 +170,33 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
     window.location.href = '/';
   };
 
+  const getTitle = () => {
+    if (showingDays || flowName === 'NoParkFeeFlow'|| flowName === 'ParkFeeFlow') {
+      return theme.title;
+    } else {
+      return 'YOU PICK HOW MUCH YOU WANT TO PAY!';
+    }
+  };
+
+  const getSubtitle = () => {
+    if (showingDays) {
+      return theme.subtitle;
+    } else if (flowName === 'MandatoryDonationFlow' || flowName === 'OptionalDonationFlow') {
+      return "Help us reach our fundraising goals and make a voluntary payment for your parking";
+    } else if (flowName === 'ParkFeeFlow') {
+      return "Choose how long you want to use the car park and select the correct tariff";
+    } else {
+      return theme.subtitle;
+    }
+  };
+
   return (
     <div className="bg-white flex flex-col items-center justify-center min-h-screen h-screen w-screen p-0 m-0 font-din text-center">
       <h1 className="text-2xl font-bold text-green-600 mb-2 leading-snug">
-        {theme.title}
+        {getTitle()}
       </h1>
       <p className="text-base text-green-600 mb-8 leading-snug w-full max-w-md text-center px-4">
-        {showingDays ? "Select number of days" : theme.subtitle}
+        {getSubtitle()}
       </p>
       <div className="flex flex-col space-y-4 w-full max-w-md px-4">
         {options.slice(0, showMore ? options.length : 7).map(option => (
