@@ -23,7 +23,7 @@ const EnterStayDuration: React.FC<EnterStayDurationProps> = ({ config, onSelect,
   const apiUrl = "https://e850837e-0018-401b-9f24-fb730bd5a456.mock.pstmn.io";
 
   const fetchDays = () => {
-    fetch(`http://192.168.2.89:5000/api/days`)
+    fetch(`https://parkingticketingwebapp.azurewebsites.net/api/days`)
       .then(response => response.json())
       .then(data => {
         appInsights.trackTrace({ message: "Fetched days from API", properties: { data } });
